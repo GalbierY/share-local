@@ -25,7 +25,15 @@ jobs:
           $target = $pkg.build.publish | Select-Object -First 1
           if (-not $target -or "$($target.owner)/$($target.repo)" -ne $env:GITHUB_REPOSITORY) { throw 'Configure o repositório com npm run updates:setup -- URL antes de publicar.' }
       - run: npm test
-      - name: Gerar instalador e publicar release
-        run: npx electron-builder --win nsis --x64 --publish always
+      - name: Gerar instalador
+        run: npm run dist
+      - name: Publicar uma única release com todos os arquivos
+        shell: pwsh
+        run: |
+          $artifacts = @((Get-ChildItem release -Filter *.exe).FullName)
+          $artifacts += @((Get-ChildItem release -Filter *.blockmap).FullName)
+          $artifacts += (Resolve-Path release/latest.yml).Path
+          gh release create $env:GITHUB_REF_NAME @artifacts --title "Share Local $env:GITHUB_REF_NAME" --generate-notes --verify-tag
+          if ($LASTEXITCODE -ne 0) { throw 'A publicação da release falhou.' }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
