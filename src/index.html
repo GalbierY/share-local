@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'none'">
+  <title>Share Local</title><link rel="icon" href="assets/paw.svg"><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="theme.css">
+</head>
+<body>
+  <aside>
+    <div class="brand"><span class="brand-icon"><img src="assets/paw.svg" alt=""></span><div>Share Local<small>CONEXÃO COM CARINHO</small></div></div>
+    <div class="nav-label">SEU ESPAÇO</div><div class="nav-active">◉ <span>Sala de casa</span><span class="tiny">2</span></div>
+    <div class="cat-family"><span class="nav-label">OS DONOS DA CASA</span><div><img src="assets/zahir.svg" alt="Zahir, rajado"><span>Zahir<small>o rajadinho</small></span></div><div><img src="assets/emma.svg" alt="Emma, tricolor sem rabinho"><span>Emma<small>tricolor, sem rabinho</small></span></div><div><img src="assets/priya.svg" alt="Priya, preta"><span>Priya<small>a panterinha</small></span></div></div>
+    <div class="aside-bottom"><span class="dot"></span> Dois humanos. Três gatos.<small>Um lugar para compartilhar.</small><div class="update-info"><span id="app-version"></span><span id="update-status" role="status">Preparando atualizações…</span><button id="check-updates" class="quiet">Buscar atualização</button></div></div>
+  </aside>
+  <main>
+    <header><span>Sala de casa <span class="muted">/</span> <span class="muted">Compartilhar</span></span><span class="badge" id="connection">● Rede local</span></header>
+    <section id="lobby">
+      <div class="hero"><div><div class="eyebrow">SEU LAR, NA MESMA TELA</div><h1>Boa companhia.<br>Uma tela em comum<span>.</span></h1><p class="intro">Vocês dois, um play e a supervisão de três gatinhos.</p></div><div class="hero-cats" aria-label="Zahir, Emma e Priya juntos"><figure><img src="assets/zahir.svg" alt="Zahir, gato rajado"><figcaption>Zahir</figcaption></figure><figure><img src="assets/emma.svg" alt="Emma, gata tricolor sem rabinho"><figcaption>Emma</figcaption></figure><figure><img src="assets/priya.svg" alt="Priya, gata preta"><figcaption>Priya</figcaption></figure></div></div>
+      <div class="cards">
+        <article class="card"><div class="card-icon"><img src="assets/paw.svg" alt=""></div><h2>Abra as portas de casa</h2><p>Crie uma sala neste computador. A outra pessoa entra com o código.</p>
+          <label for="room-name">NOME DA SALA</label><input id="room-name" maxlength="40" value="Nosso cantinho" autocomplete="off">
+          <button id="host" class="primary">Abrir nossa sala <span>↗</span></button>
+        </article>
+        <article class="card"><div class="card-icon peach">↗</div><h2>Já tem alguém esperando?</h2><p>Escolha uma sala da rede ou use o IP do outro computador.</p>
+          <div id="discovered" aria-live="polite"></div>
+          <label for="address">IP DO OUTRO COMPUTADOR</label><input id="address" placeholder="192.168.1.10" autocomplete="off" maxlength="15">
+          <label for="code">CÓDIGO DA SALA</label><input id="code" placeholder="6 dígitos" inputmode="numeric" maxlength="6" autocomplete="off">
+          <button id="join" class="secondary">Entrar na sala <span>→</span></button>
+        </article>
+      </div>
+      <p class="footnote">⌁ &nbsp;Na mesma rede Wi-Fi ou cabo. Sem conta, sem servidor na nuvem.</p>
+    </section>
+    <section id="room" hidden>
+      <div class="room-heading"><div><div class="eyebrow">SEU ESPAÇO COMPARTILHADO</div><h1 id="room-title">Nosso cantinho</h1></div><button id="leave" class="quiet">Sair da sala</button></div>
+      <div id="invite" class="invite"><div><small>CÓDIGO PARA ENTRAR</small><strong id="invite-code"></strong></div><div><small>IP DESTE COMPUTADOR</small><span id="invite-ip"></span></div></div>
+      <div class="stage" id="stage"><video id="remote" autoplay playsinline hidden></video><div id="stage-empty"><div class="waiting-cats"><img src="assets/zahir.svg" alt="Zahir"><img src="assets/emma.svg" alt="Emma, sem rabinho"><img src="assets/priya.svg" alt="Priya"></div><h2 id="stage-title">O sofá já tem companhia.</h2><p id="stage-subtitle">Esperando sua pessoa entrar na sala…</p></div><button id="play" class="secondary" hidden>Reproduzir tela e áudio</button></div>
+      <div class="toolbar"><span id="peer-state"><span class="dot"></span> Esperando companhia</span><div><button id="fullscreen" class="quiet" hidden>Tela cheia</button><button id="mute" class="quiet" hidden>Silenciar</button><button id="share" class="primary" disabled>Compartilhar tela</button><button id="stop" class="danger" hidden>Parar transmissão</button></div></div>
+      <div id="preview-wrap" hidden><span class="preview-label">VOCÊ ESTÁ COMPARTILHANDO · áudio do computador incluído quando disponível</span><video id="preview" autoplay muted playsinline></video></div>
+      <p class="footnote">Compartilhe apenas o que quiser mostrar. O áudio pode incluir outros aplicativos.</p>
+    </section>
+    <div id="notice" role="status" aria-live="polite" hidden></div>
+  </main>
+  <dialog id="picker"><div class="picker-heading"><div><h2>O que vamos assistir?</h2><p>Escolha uma tela ou janela. O áudio compartilhado é o do computador inteiro.</p></div><button id="cancel-picker" class="quiet" aria-label="Fechar">✕</button></div><div id="sources"></div></dialog>
+  <script src="renderer.js"></script>
+</body>
+</html>

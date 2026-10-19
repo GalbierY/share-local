@@ -1,0 +1,53 @@
+{
+  "name": "share-local",
+  "version": "0.2.0",
+  "description": "Compartilhamento de tela e áudio para dois, na rede de casa.",
+  "main": "src/main.cjs",
+  "author": "Nosso Canto",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.cjs",
+    "test:app": "node scripts/smoke.cjs",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "updates:setup": "node scripts/setup-updates.cjs"
+  },
+  "dependencies": {
+    "ws": "^8.18.3",
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "electron": "^42.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "local.nossocanto.app",
+    "productName": "Share Local",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis",
+      "artifactName": "Share-Local-Instalar-${version}.${ext}",
+      "icon": "src/assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "GalbierY",
+        "repo": "share-local",
+        "releaseType": "release"
+      }
+    ]
+  }
+}

@@ -1,0 +1,64 @@
+:root { background: #16151c; color: #f1eaf0; }
+body { background: radial-gradient(ellipse at 80% 0%, #37263366, transparent 55%); }
+aside { background: #1d1b25; border-color: #38303e; }
+.brand { font-size: 21px; letter-spacing: -.7px; }
+.brand-icon { background: #46324f; display: grid; place-items: center; }
+.brand-icon img { width: 28px; height: 28px; }
+.brand small { font-size: 7px; color: #bd9eb7; letter-spacing: 1.6px; }
+.nav-label { color: #a58da4; }
+.nav-active { background: #3a2b41; color: #e3bce5; }
+.tiny { background: #57405c; }
+header { border-color: #382f3e; }
+#lobby { padding-top: 34px; }
+.hero { display: flex; gap: 12px; justify-content: space-between; align-items: center; min-height: 196px; margin-bottom: 23px; }
+.hero>div:first-child { min-width: 330px; }
+.eyebrow { color: #e3b48c; font-size: 9px; letter-spacing: 2px; }
+h1 { font-size: 33px; line-height: 1.2; letter-spacing: -1.1px; }
+h1 span { color: #d4a5cf; }
+.intro { color: #b0a2b1; font-size: 12px; margin-bottom: 0; line-height: 1.8; }
+.hero-cats { display: flex; flex: 1; max-width: 350px; min-width: 240px; align-items: flex-end; position: relative; padding: 0 5px 10px; }
+.hero-cats::before { content: ''; position: absolute; bottom: 28px; left: 0; width: 100%; height: 100px; background: #45304566; border-radius: 60% 60% 40% 40%; z-index: 0; }
+.hero-cats figure { margin: 0 -6px; width: 36%; position: relative; }
+.hero-cats figure:nth-child(2) { transform: translateY(-9px); z-index: 1; }
+.hero-cats img { width: 100%; display: block; }
+.hero-cats figcaption { color: #c8adc6; text-align: center; font-size: 10px; letter-spacing: .8px; }
+.card { background: #24212c; border-color: #423545; padding: 23px; }
+.card-icon { background: #423047; color: #e4bbdf; width: 37px; height: 37px; border-radius: 11px; }
+.card-icon img { width: 24px; }
+.peach { background: #47332e; color: #e9b995; }
+.card h2 { margin-top: 17px; }
+.card p { color: #b0a2b1; }
+input { background: #19171f; border-color: #493b4e; color: #f2e9ef; padding: 11px; }
+input::placeholder { color: #8f7e93; }
+label, small { color: #b19caf; }
+.primary { background: #d5afd6; color: #302035; }
+.primary:hover:not(:disabled) { background: #e4c2e3; }
+.secondary { background: #3a3040; border-color: #57425b; color: #f0deec; }
+.secondary:hover { background: #4b3b51; }
+.quiet { background: #352c3a; color: #d2bdcf; }
+.footnote { color: #a28c9f; }
+.cat-family { margin-top: 32px; }
+.cat-family>.nav-label { margin: 0 10px 12px; display: block; font-size: 9px; }
+.cat-family>div { display: flex; gap: 11px; align-items: center; margin: 7px 3px; }
+.cat-family img { width: 39px; height: 41px; object-fit: cover; object-position: top; background: #332a3c; border-radius: 12px; }
+.cat-family span { font-size: 12px; color: #e2cedb; }
+.cat-family small { display: block; font-size: 9px; letter-spacing: .2px; color: #9e889f; margin-top: 3px; }
+.aside-bottom { padding-top: 25px; font-size: 11px; color: #c2adbf; }
+.aside-bottom>small { color: #957f94; }
+.update-info { margin-top: 20px; padding-top: 15px; border-top: 1px solid #3a2f40; display: flex; flex-direction: column; gap: 7px; }
+#app-version { font-size: 10px; color: #bf9fb9; }
+#update-status { font-size: 10px; line-height: 1.5; color: #9d8b9e; }
+#check-updates { font-size: 10px; padding: 7px; text-align: left; background: transparent; color: #d1b0ce; }
+.invite { background: #2a2331; border-color: #4a3850; }
+.invite strong { color: #e4bde1; }
+.stage { background: #121017; border-color: #3b2e40; }
+.waiting-cats { display: flex; justify-content: center; }
+.waiting-cats img { width: 85px; margin: 0 -6px; }
+.stage p { color: #b39bb0; }
+.stage h2 { color: #ead9e6; }
+.toolbar>span { color: #bea9ba; }
+dialog { background: #25202d; border-color: #61476b; }
+#sources button { background: #3b2f44; }
+#notice { border-color: #a47a99; background: #402c42; }
+@media (max-width:1000px) { .hero>div:first-child { min-width: 280px; } .hero h1 { font-size: 28px; } .hero-cats { min-width: 170px; } .hero { gap: 0; } .hero-cats figure { margin: 0 -5px; } .cat-family { margin-top: 24px; } .brand { font-size: 17px; } }
+@media (max-height:730px) { #lobby { padding-top: 20px; } .hero { min-height: 165px; margin-bottom: 15px; } .hero-cats { max-width: 290px; } .cat-family { margin-top: 22px; } .cat-family>div { margin: 3px; } .card { padding: 18px; } .card p { margin-bottom: 12px; } }

@@ -1,0 +1,31 @@
+name: Publicar atualização
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Conferir versão e destino
+        shell: pwsh
+        run: |
+          $pkg = Get-Content package.json -Raw | ConvertFrom-Json
+          if ($env:GITHUB_REF_NAME -ne "v$($pkg.version)") { throw 'A tag precisa corresponder à versão do package.json.' }
+          $target = $pkg.build.publish | Select-Object -First 1
+          if (-not $target -or "$($target.owner)/$($target.repo)" -ne $env:GITHUB_REPOSITORY) { throw 'Configure o repositório com npm run updates:setup -- URL antes de publicar.' }
+      - run: npm test
+      - name: Gerar instalador e publicar release
+        run: npx electron-builder --win nsis --x64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

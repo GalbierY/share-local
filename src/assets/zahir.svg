@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 190" role="img" aria-labelledby="title">
+<title id="title">Zahir, um gato rajado</title>
+<ellipse cx="86" cy="173" rx="69" ry="9" fill="#101119" opacity=".4"/>
+<path d="M117 160c52 6 43-57 26-41-7 8 6 27-21 24" fill="none" stroke="#a99179" stroke-width="17" stroke-linecap="round"/>
+<path d="M142 125l11 3m-13 15 11 5" fill="none" stroke="#635349" stroke-width="6"/>
+<path d="M51 168c-5-20 0-67 16-79h41c17 13 22 57 17 79z" fill="#ae9881"/>
+<path d="m57 113 15 5m-17 12 15 5m49-22-15 5m18 12-16 5" stroke="#65564c" stroke-width="6" stroke-linecap="round"/>
+<ellipse cx="88" cy="137" rx="18" ry="28" fill="#d9c7aa"/>
+<path d="M55 163v9m14-12v12m41-9v9m13-9v9" stroke="#65564c" stroke-width="3"/>
+<path d="M46 62 44 19q1-8 9-2l26 21h20l27-21q8-6 8 3l-2 42c17 51-100 55-86 0" fill="#bba58b" stroke="#65564c" stroke-width="2"/>
+<path d="m52 47-1-21 18 17m38 0 19-18-1 22" fill="#d6a9a3"/>
+<path d="m77 39 4 15m14-15-3 15m-7-17 1 12M45 64l15 5m-16 8 15 2m71-15-15 5m16 8-15 2" fill="none" stroke="#65564c" stroke-width="5" stroke-linecap="round"/>
+<path d="M62 70q6-8 12 0m27 0q6-8 12 0" fill="none" stroke="#37312f" stroke-width="3.5" stroke-linecap="round"/>
+<ellipse cx="88" cy="84" rx="19" ry="12" fill="#e9d6bc"/>
+<path d="m83 79 5 4 5-4m-5 4v5m0 0q-5 5-9 0m9 0q5 5 9 0" fill="none" stroke="#735650" stroke-width="2" stroke-linecap="round"/>
+<path d="m61 83-23-5m24 12-24 3m76-10 23-5m-24 12 24 3" stroke="#e3cdb0" stroke-width="2" stroke-linecap="round"/>
+</svg>
