@@ -1,5 +1,7 @@
 const $ = id => document.getElementById(id);
 let connected = false, hosting = false, outgoing, incoming, noticeTimer, userMuted = false;
+let lobbyBusy = false, capturePending = false, captureSources = [], sourceKind = 'screen';
+let pendingRequest, joinCancelled = false;
 let signalQueue = Promise.resolve();
 const earlyCandidates = new Map();
 const discovered = new Map();
@@ -9,7 +11,7 @@ async function action(name, data) {
   return result.value;
 }
 function notice(message) {
-  $('notice').textContent = message;
+  $('notice-message').textContent = message;
   $('notice').hidden = false;
   clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => { $('notice').hidden = true; }, 9000);
@@ -17,23 +19,82 @@ function notice(message) {
 function bind(id, handler) {
   $(id).addEventListener('click', async () => {
     $(id).disabled = true;
+    $(id).setAttribute('aria-busy', 'true');
+    const label = $(id).textContent;
+    if ($(id).dataset.pending) $(id).textContent = $(id).dataset.pending;
     try { await handler(); } catch (error) { notice(error.message); }
-    finally { if (id !== 'check-updates') $(id).disabled = id === 'share' ? !connected : false; }
+    finally {
+      if ($(id).dataset.pending) $(id).textContent = label;
+      $(id).removeAttribute('aria-busy');
+      if (id !== 'check-updates') $(id).disabled = id === 'share' ? !connected || capturePending : false;
+    }
   });
 }
+function bindForm(id, pendingLabel, handler) {
+  const form = $(`${id}-form`), button = $(id), label = button.querySelector('[data-label]');
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (lobbyBusy) return;
+    lobbyBusy = true;
+    $('host').disabled = $('join').disabled = true;
+    for (const input of document.querySelectorAll('.card input')) input.disabled = true;
+    form.setAttribute('aria-busy', 'true');
+    $(`${id}-error`).hidden = true;
+    const previous = label.textContent;
+    label.textContent = pendingLabel;
+    if (id === 'join') { joinCancelled = false; $('join-pending').hidden = false; $('join-progress').textContent = 'Localizando a sala…'; }
+    try { await handler(); }
+    catch (error) {
+      if (id !== 'join' || !joinCancelled) {
+        $(`${id}-error`).textContent = error.message;
+        $(`${id}-error`).hidden = false;
+      }
+    }
+    finally {
+      lobbyBusy = false;
+      $('host').disabled = $('join').disabled = false;
+      for (const input of document.querySelectorAll('.card input')) input.disabled = false;
+      if (id === 'join') $('join-pending').hidden = true;
+      form.removeAttribute('aria-busy');
+      label.textContent = previous;
+      if (!$('lobby').hidden) button.focus();
+    }
+  });
+  form.addEventListener('input', () => { $(`${id}-error`).hidden = true; });
+}
 function showRoom(name) {
+  clearTimeout(noticeTimer);
+  $('notice').hidden = true;
   $('lobby').hidden = true;
   $('room').hidden = false;
   $('room-title').textContent = name;
   $('invite').hidden = !hosting;
+  $('participant-count').textContent = connected ? '2/2' : '1/2';
+  $('room-title').focus();
+}
+function showLobby() {
+  clearTimeout(noticeTimer);
+  $('notice').hidden = true;
+  const wasHosting = hosting;
+  hosting = false;
+  $('room').hidden = true;
+  $('lobby').hidden = false;
+  $('participant-count').textContent = '0/2';
+  if ($('join-request').open) $('join-request').close();
+  pendingRequest = undefined;
+  $(wasHosting ? 'host' : 'address').focus();
 }
 function updateConnection(value) {
   connected = value;
-  $('share').disabled = !value;
+  $('share').disabled = !value || capturePending;
+  $('participant-count').textContent = value ? '2/2' : hosting ? '1/2' : '0/2';
   $('peer-state').textContent = value ? '● Vocês estão conectados' : '○ Esperando companhia';
   $('connection').textContent = value ? '● Juntos na sala' : '● Rede local';
-  $('stage-title').textContent = value ? 'Humanos conectados. Gatos acomodados.' : 'O sofá já tem companhia.';
-  $('stage-subtitle').textContent = value ? 'Qualquer um dos dois pode compartilhar a tela.' : 'Esperando sua pessoa entrar na sala…';
+  renderStage();
+}
+function renderStage() {
+  $('stage-title').textContent = outgoing ? 'Sua tela está sendo compartilhada.' : connected ? 'Humanos conectados. Gatos acomodados.' : 'O sofá está reservado.';
+  $('stage-subtitle').textContent = outgoing ? 'Sua prévia aparece abaixo. A tela da outra pessoa aparecerá aqui.' : connected ? 'Escolha uma tela ou janela no botão Compartilhar tela.' : 'Envie o convite para sua pessoa entrar na sala.';
 }
 function stopIncoming() {
   if (incoming) { earlyCandidates.delete(incoming.id); incoming.pc.close(); incoming = undefined; }
@@ -55,11 +116,13 @@ function stopOutgoing(notify = true) {
   $('preview-wrap').hidden = $('stop').hidden = true;
   $('share').hidden = false;
   updateRemoteAudio();
+  renderStage();
 }
 function updateRemoteAudio() {
   $('remote').muted = Boolean(outgoing) || userMuted;
   $('mute').disabled = Boolean(outgoing);
   $('mute').textContent = outgoing ? 'Áudio pausado durante envio' : userMuted ? 'Ativar áudio' : 'Silenciar';
+  $('mute').setAttribute('aria-pressed', String($('remote').muted));
 }
 function clearMedia() { stopOutgoing(false); stopIncoming(); earlyCandidates.clear(); }
 function createPeer(id) {
@@ -118,16 +181,15 @@ async function receive(msg) {
     earlyCandidates.delete(msg.id);
   }
 }
-bind('host', async () => {
+bindForm('host', 'Abrindo sala…', async () => {
   const room = await action('host', $('room-name').value);
   hosting = true;
   updateConnection(false);
   showRoom(room.name);
-  $('invite-code').textContent = room.code;
   $('invite-ip').textContent = room.addresses.join(' · ') || 'Sem rede. Conecte ao Wi-Fi e abra a sala novamente.';
 });
-bind('join', async () => {
-  const room = await action('join', { address: $('address').value.trim(), code: $('code').value.trim() });
+bindForm('join', 'Enviando pedido…', async () => {
+  const room = await action('join', { address: $('address').value.trim() });
   hosting = false;
   updateConnection(true);
   showRoom(room.name);
@@ -136,14 +198,33 @@ bind('leave', async () => {
   updateConnection(false);
   clearMedia();
   await action('leave');
-  hosting = false;
-  $('room').hidden = true;
-  $('lobby').hidden = false;
+  showLobby();
 });
+bind('copy-invite', async () => {
+  await action('copy-invite');
+  notice('Convite copiado. Envie para quem você quer na sala.');
+});
+bind('cancel-join', async () => { joinCancelled = true; await action('leave'); });
+bind('approve-join', () => action('respond-join', { id: pendingRequest?.id, approve: true }));
+bind('reject-join', () => action('respond-join', { id: pendingRequest?.id, approve: false }));
+$('join-request').addEventListener('cancel', event => { event.preventDefault(); $('reject-join').click(); });
 bind('share', async () => {
-  const sources = await action('sources');
+  captureSources = await action('sources');
+  if (!connected) return;
+  if (!captureSources.length) throw new Error('Nenhuma tela disponível para compartilhar.');
+  sourceKind = captureSources.some(source => source.id.startsWith('screen:')) ? 'screen' : 'window';
+  renderSources();
+  $('picker').showModal();
+});
+function renderSources() {
   $('sources').replaceChildren();
-  if (!sources.length) throw new Error('Nenhuma tela disponível para compartilhar.');
+  for (const [kind, id, label] of [['screen', 'filter-screens', 'Telas'], ['window', 'filter-windows', 'Janelas']]) {
+    $(id).textContent = `${label} (${captureSources.filter(source => source.id.startsWith(`${kind}:`)).length})`;
+    $(id).setAttribute('aria-pressed', String(sourceKind === kind));
+  }
+  const sources = captureSources.filter(source => source.id.startsWith(`${sourceKind}:`));
+  $('sources-empty').textContent = sourceKind === 'screen' ? 'Nenhuma tela disponível. Verifique as janelas abertas.' : 'Nenhuma janela disponível. Escolha uma tela ou abra a janela e tente novamente.';
+  $('sources-empty').hidden = sources.length > 0;
   for (const source of sources) {
     const button = document.createElement('button');
     const img = document.createElement('img');
@@ -151,51 +232,77 @@ bind('share', async () => {
     img.alt = '';
     const label = document.createElement('span');
     label.textContent = source.name;
+    button.title = source.name;
     button.append(img, label);
-    button.addEventListener('click', async () => {
-      $('picker').close();
-      if (!connected || outgoing) return;
-      let stream;
-      try {
-        await action('select-source', source.id);
-        stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30, max: 30 } }, audio: true });
-        if (!connected) { stream.getTracks().forEach(track => track.stop()); return; }
-        const state = { id: crypto.randomUUID(), stream, pc: null };
-        state.pc = createPeer(state.id);
-        outgoing = state;
-        updateRemoteAudio();
-        stream.getTracks().forEach(track => state.pc.addTrack(track, stream));
-        stream.getVideoTracks()[0].onended = () => { if (outgoing === state) stopOutgoing(); };
-        $('preview').srcObject = stream;
-        $('preview-wrap').hidden = $('stop').hidden = false;
-        $('share').hidden = true;
-        await state.pc.setLocalDescription(await state.pc.createOffer());
-        await action('signal', { type: 'offer', id: state.id, description: state.pc.localDescription.toJSON() });
-        if (!stream.getAudioTracks().length) notice('A tela está sendo compartilhada, mas o Windows não disponibilizou áudio nesta captura.');
-      } catch (error) {
-        stream?.getTracks().forEach(track => track.stop());
-        stopOutgoing();
-        notice(`Não foi possível compartilhar: ${error.message}`);
-      }
-    });
+    button.addEventListener('click', () => startSharing(source));
     $('sources').append(button);
   }
-  $('picker').showModal();
-});
+}
+async function startSharing(source) {
+  $('picker').close();
+  if (!connected || outgoing || capturePending) return;
+  capturePending = true;
+  $('share').disabled = true;
+  let stream;
+  try {
+    await action('select-source', source.id);
+    stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30, max: 30 } }, audio: true });
+    if (!connected) { stream.getTracks().forEach(track => track.stop()); return; }
+    const state = { id: crypto.randomUUID(), stream, pc: null };
+    state.pc = createPeer(state.id);
+    outgoing = state;
+    updateRemoteAudio();
+    stream.getTracks().forEach(track => state.pc.addTrack(track, stream));
+    stream.getVideoTracks()[0].onended = () => { if (outgoing === state) stopOutgoing(); };
+    $('preview').srcObject = stream;
+    $('shared-source').textContent = source.name;
+    $('capture-audio').textContent = stream.getAudioTracks().length ? 'Áudio do computador incluído. O som recebido fica pausado durante o envio para evitar retorno.' : 'Sem áudio nesta captura.';
+    $('preview-wrap').hidden = $('stop').hidden = false;
+    $('share').hidden = true;
+    renderStage();
+    await state.pc.setLocalDescription(await state.pc.createOffer());
+    await action('signal', { type: 'offer', id: state.id, description: state.pc.localDescription.toJSON() });
+    if (!stream.getAudioTracks().length) notice('A tela está sendo compartilhada, mas o Windows não disponibilizou áudio nesta captura.');
+  } catch (error) {
+    stream?.getTracks().forEach(track => track.stop());
+    stopOutgoing();
+    notice(`Não foi possível compartilhar: ${error.message}`);
+  } finally {
+    capturePending = false;
+    $('share').disabled = !connected;
+  }
+}
+bind('filter-screens', () => { sourceKind = 'screen'; renderSources(); });
+bind('filter-windows', () => { sourceKind = 'window'; renderSources(); });
 bind('stop', () => stopOutgoing());
 bind('cancel-picker', () => $('picker').close());
 bind('mute', () => { userMuted = !userMuted; updateRemoteAudio(); });
 bind('fullscreen', () => $('remote').requestFullscreen());
 bind('play', async () => { await $('remote').play(); $('play').hidden = true; });
+bind('dismiss-notice', () => { clearTimeout(noticeTimer); $('notice').hidden = true; });
+$('address').addEventListener('input', renderDiscovered);
 window.canto.onEvent(({ type, data }) => {
   if (type === 'update-state') renderUpdate(data);
   if (type === 'connected') updateConnection(true);
+  if (type === 'join-pending') {
+    $('join-progress').textContent = 'Pedido enviado. Aguardando a outra pessoa autorizar…';
+    $('join').querySelector('[data-label]').textContent = 'Aguardando autorização…';
+  }
+  if (type === 'join-request') {
+    pendingRequest = data;
+    $('request-address').textContent = data.address;
+    $('join-request').showModal();
+  }
+  if (type === 'join-request-ended' && pendingRequest?.id === data.id) {
+    pendingRequest = undefined;
+    $('join-request').close();
+  }
   if (type === 'signal') signalQueue = signalQueue.then(() => receive(data)).catch(error => notice(`Falha na transmissão: ${error.message}`));
   if (type === 'disconnected') {
     updateConnection(false);
     clearMedia();
     if ($('picker').open) $('picker').close();
-    if (!data.hosting) { $('room').hidden = true; $('lobby').hidden = false; }
+    if (!data.hosting) showLobby();
     notice(data.hosting ? 'A outra pessoa saiu. A sala continua aberta.' : 'A sala foi fechada. Você pode entrar novamente.');
   }
   if (type === 'discovery-warning' || type === 'network-error') notice(data);
@@ -205,14 +312,23 @@ window.canto.onEvent(({ type, data }) => {
   }
 });
 function renderDiscovered() {
-  $('discovered').replaceChildren();
+  const buttons = new Map(Array.from($('discovered').children, button => [button.dataset.address, button]));
   for (const [address, entry] of discovered) {
     if (Date.now() - entry.seen > 7000) { discovered.delete(address); continue; }
-    const button = document.createElement('button');
+    let button = buttons.get(address);
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.address = address;
+      button.addEventListener('click', () => { $('address').value = address; $('join-error').hidden = true; renderDiscovered(); $('join').focus(); });
+      $('discovered').append(button);
+    }
     button.textContent = `● ${entry.name} · ${address}`;
-    button.addEventListener('click', () => { $('address').value = address; $('code').focus(); });
-    $('discovered').append(button);
+    button.setAttribute('aria-pressed', String($('address').value.trim() === address));
+    buttons.delete(address);
   }
+  for (const button of buttons.values()) button.remove();
+  $('discovery-status').textContent = discovered.size ? `${discovered.size} ${discovered.size === 1 ? 'sala encontrada. Selecione para preencher o IP.' : 'salas encontradas. Selecione para preencher o IP.'}` : 'Nenhuma sala encontrada ainda. Você também pode entrar pelo IP.';
 }
 setInterval(renderDiscovered, 3000);
 function renderUpdate(state) {

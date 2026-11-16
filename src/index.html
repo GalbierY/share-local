@@ -8,7 +8,7 @@
 <body>
   <aside>
     <div class="brand"><span class="brand-icon"><img src="assets/paw.svg" alt=""></span><div>Share Local<small>CONEXÃO COM CARINHO</small></div></div>
-    <div class="nav-label">SEU ESPAÇO</div><div class="nav-active">◉ <span>Sala de casa</span><span class="tiny">2</span></div>
+    <div class="nav-label">SEU ESPAÇO</div><div class="nav-active">◉ <span>Sala de casa</span><span class="tiny" id="participant-count" title="Pessoas na sala">0/2</span></div>
     <div class="cat-family"><span class="nav-label">OS DONOS DA CASA</span><div><img src="assets/zahir.svg" alt="Zahir, rajado"><span>Zahir<small>o rajadinho</small></span></div><div><img src="assets/emma.svg" alt="Emma, tricolor sem rabinho"><span>Emma<small>tricolor, sem rabinho</small></span></div><div><img src="assets/priya.svg" alt="Priya, preta"><span>Priya<small>a panterinha</small></span></div></div>
     <div class="aside-bottom"><span class="dot"></span> Dois humanos. Três gatos.<small>Um lugar para compartilhar.</small><div class="update-info"><span id="app-version"></span><span id="update-status" role="status">Preparando atualizações…</span><button id="check-updates" class="quiet">Buscar atualização</button></div></div>
   </aside>
@@ -17,30 +17,34 @@
     <section id="lobby">
       <div class="hero"><div><div class="eyebrow">SEU LAR, NA MESMA TELA</div><h1>Boa companhia.<br>Uma tela em comum<span>.</span></h1><p class="intro">Vocês dois, um play e a supervisão de três gatinhos.</p></div><div class="hero-cats" aria-label="Zahir, Emma e Priya juntos"><figure><img src="assets/zahir.svg" alt="Zahir, gato rajado"><figcaption>Zahir</figcaption></figure><figure><img src="assets/emma.svg" alt="Emma, gata tricolor sem rabinho"><figcaption>Emma</figcaption></figure><figure><img src="assets/priya.svg" alt="Priya, gata preta"><figcaption>Priya</figcaption></figure></div></div>
       <div class="cards">
-        <article class="card"><div class="card-icon"><img src="assets/paw.svg" alt=""></div><h2>Abra as portas de casa</h2><p>Crie uma sala neste computador. A outra pessoa entra com o código.</p>
+        <form id="host-form" class="card" aria-labelledby="host-title"><div class="card-icon"><img src="assets/paw.svg" alt=""></div><h2 id="host-title">Abra as portas de casa</h2><p>Crie uma sala e autorize quem pode entrar. Sem senha para decorar.</p>
           <label for="room-name">NOME DA SALA</label><input id="room-name" maxlength="40" value="Nosso cantinho" autocomplete="off">
-          <button id="host" class="primary">Abrir nossa sala <span>↗</span></button>
-        </article>
-        <article class="card"><div class="card-icon peach">↗</div><h2>Já tem alguém esperando?</h2><p>Escolha uma sala da rede ou use o IP do outro computador.</p>
-          <div id="discovered" aria-live="polite"></div>
-          <label for="address">IP DO OUTRO COMPUTADOR</label><input id="address" placeholder="192.168.1.10" autocomplete="off" maxlength="15">
-          <label for="code">CÓDIGO DA SALA</label><input id="code" placeholder="6 dígitos" inputmode="numeric" maxlength="6" autocomplete="off">
-          <button id="join" class="secondary">Entrar na sala <span>→</span></button>
-        </article>
+          <p id="host-error" class="form-error" role="alert" hidden></p>
+          <button id="host" type="submit" class="primary"><span data-label>Abrir nossa sala</span><span aria-hidden="true">↗</span></button>
+        </form>
+        <form id="join-form" class="card" aria-labelledby="join-title"><div class="card-icon peach" aria-hidden="true">↗</div><h2 id="join-title">Já tem alguém esperando?</h2><p>Escolha uma sala da rede ou use o IP do outro computador.</p>
+          <div class="discovery"><span class="field-caption">SALAS NA SUA REDE</span><p id="discovery-status" role="status">Procurando companhia… Se preferir, entre pelo IP.</p><div id="discovered" role="group" aria-label="Salas encontradas"></div></div>
+          <label for="address">IP DO OUTRO COMPUTADOR</label><input id="address" placeholder="Ex.: 192.168.1.10" autocomplete="off" spellcheck="false" maxlength="15" required pattern="[0-9]{1,3}(\.[0-9]{1,3}){3}" title="Digite o IP exibido no outro computador, como 192.168.1.10.">
+          <span class="field-hint">Quem abriu a sala recebe seu pedido e autoriza a entrada.</span>
+          <div id="join-pending" class="join-pending" role="status" hidden><span id="join-progress">Localizando a sala…</span><button id="cancel-join" type="button" class="quiet">Cancelar pedido</button></div>
+          <p id="join-error" class="form-error" role="alert" hidden></p>
+          <button id="join" type="submit" class="secondary"><span data-label>Pedir para entrar</span><span aria-hidden="true">→</span></button>
+        </form>
       </div>
       <p class="footnote">⌁ &nbsp;Na mesma rede Wi-Fi ou cabo. Sem conta, sem servidor na nuvem.</p>
     </section>
     <section id="room" hidden>
-      <div class="room-heading"><div><div class="eyebrow">SEU ESPAÇO COMPARTILHADO</div><h1 id="room-title">Nosso cantinho</h1></div><button id="leave" class="quiet">Sair da sala</button></div>
-      <div id="invite" class="invite"><div><small>CÓDIGO PARA ENTRAR</small><strong id="invite-code"></strong></div><div><small>IP DESTE COMPUTADOR</small><span id="invite-ip"></span></div></div>
-      <div class="stage" id="stage"><video id="remote" autoplay playsinline hidden></video><div id="stage-empty"><div class="waiting-cats"><img src="assets/zahir.svg" alt="Zahir"><img src="assets/emma.svg" alt="Emma, sem rabinho"><img src="assets/priya.svg" alt="Priya"></div><h2 id="stage-title">O sofá já tem companhia.</h2><p id="stage-subtitle">Esperando sua pessoa entrar na sala…</p></div><button id="play" class="secondary" hidden>Reproduzir tela e áudio</button></div>
-      <div class="toolbar"><span id="peer-state"><span class="dot"></span> Esperando companhia</span><div><button id="fullscreen" class="quiet" hidden>Tela cheia</button><button id="mute" class="quiet" hidden>Silenciar</button><button id="share" class="primary" disabled>Compartilhar tela</button><button id="stop" class="danger" hidden>Parar transmissão</button></div></div>
-      <div id="preview-wrap" hidden><span class="preview-label">VOCÊ ESTÁ COMPARTILHANDO · áudio do computador incluído quando disponível</span><video id="preview" autoplay muted playsinline></video></div>
+      <div class="room-heading"><div><div class="eyebrow">SEU ESPAÇO COMPARTILHADO</div><h1 id="room-title" tabindex="-1">Nosso cantinho</h1></div><button id="leave" class="quiet">Sair da sala</button></div>
+      <div id="invite" class="invite"><div class="invite-help"><strong>O próximo passo é convidar.</strong><p>A outra pessoa pede para entrar e você autoriza aqui.</p></div><div class="invite-address"><small>IP DESTE COMPUTADOR</small><span id="invite-ip"></span></div><button id="copy-invite" class="secondary">Copiar convite</button></div>
+      <div class="stage" id="stage"><video id="remote" autoplay playsinline aria-label="Tela compartilhada pela outra pessoa" hidden></video><div id="stage-empty" role="status"><div class="waiting-cats" aria-hidden="true"><img src="assets/zahir.svg" alt=""><img src="assets/emma.svg" alt=""><img src="assets/priya.svg" alt=""></div><h2 id="stage-title">O sofá está reservado.</h2><p id="stage-subtitle">Envie o convite para sua pessoa entrar na sala.</p></div><button id="play" class="secondary" hidden>Reproduzir tela e áudio</button></div>
+      <div class="toolbar"><span id="peer-state" role="status">○ Esperando companhia</span><div><button id="fullscreen" class="quiet" hidden>Tela cheia</button><button id="mute" class="quiet" aria-pressed="false" hidden>Silenciar</button><button id="share" class="primary" data-pending="Buscando telas…" disabled>Compartilhar tela</button><button id="stop" class="danger" hidden>Parar transmissão</button></div></div>
+      <div id="preview-wrap" hidden><div class="preview-label" role="status"><span class="sharing-indicator">● VOCÊ ESTÁ COMPARTILHANDO</span><strong id="shared-source"></strong><span id="capture-audio"></span></div><video id="preview" autoplay muted playsinline aria-label="Prévia da sua transmissão"></video></div>
       <p class="footnote">Compartilhe apenas o que quiser mostrar. O áudio pode incluir outros aplicativos.</p>
     </section>
-    <div id="notice" role="status" aria-live="polite" hidden></div>
+    <div id="notice" role="status" aria-live="polite" hidden><span id="notice-message"></span><button id="dismiss-notice" class="quiet" aria-label="Fechar aviso">✕</button></div>
   </main>
-  <dialog id="picker"><div class="picker-heading"><div><h2>O que vamos assistir?</h2><p>Escolha uma tela ou janela. O áudio compartilhado é o do computador inteiro.</p></div><button id="cancel-picker" class="quiet" aria-label="Fechar">✕</button></div><div id="sources"></div></dialog>
+  <dialog id="picker" aria-labelledby="picker-title" aria-describedby="picker-description"><div class="picker-heading"><div><h2 id="picker-title">O que vamos assistir?</h2><p id="picker-description">Clique em uma prévia para começar. O áudio compartilhado é o do computador inteiro.</p></div><button id="cancel-picker" class="quiet" aria-label="Fechar seletor de telas">✕</button></div><div class="source-filters" role="group" aria-label="Tipo de captura"><button id="filter-screens" class="quiet" aria-pressed="true" autofocus>Telas</button><button id="filter-windows" class="quiet" aria-pressed="false">Janelas</button></div><p id="sources-empty" class="field-hint" role="status" hidden>Nenhuma janela disponível. Escolha uma tela ou abra a janela e tente novamente.</p><div id="sources"></div><p class="picker-footnote">Apenas a tela ou janela escolhida será exibida. Você pode parar a qualquer momento.</p></dialog>
+  <dialog id="join-request" aria-labelledby="request-title" aria-describedby="request-description"><div class="request-icon" aria-hidden="true">↗</div><h2 id="request-title">Tem companhia na porta.</h2><p id="request-description">Um computador da sua rede quer entrar na sala. É a pessoa que você está esperando?</p><div class="request-device"><small>IP DE QUEM PEDIU</small><strong id="request-address"></strong></div><p class="field-hint">A pessoa só entra e pode compartilhar depois que você autorizar. O pedido expira em 1 minuto.</p><div class="request-actions"><button id="reject-join" class="quiet" autofocus>Recusar</button><button id="approve-join" class="primary">Autorizar entrada</button></div></dialog>
   <script src="renderer.js"></script>
 </body>
 </html>

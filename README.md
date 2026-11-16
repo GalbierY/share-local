@@ -1,13 +1,16 @@
 # Share Local
 
-Aplicativo Windows para duas pessoas compartilharem tela e áudio na rede de casa. Sem cadastro. Uma pessoa abre a sala e a outra entra com o código de seis dígitos. Ambos podem transmitir. A transmissão usa WebRTC, diretamente entre os computadores. Zahir (rajado), Emma (tricolor sem rabinho) e Priya (preta) são os mascotes do tema.
+Aplicativo Windows para duas pessoas compartilharem tela e áudio na rede de casa. Sem cadastro ou senha: uma pessoa abre a sala, a outra pede para entrar e quem abriu autoriza. Ambos podem transmitir. A transmissão usa WebRTC, diretamente entre os computadores. Zahir (rajado), Emma (tricolor sem rabinho) e Priya (preta) são os mascotes do tema.
 
 ## Usar
 
 1. Baixe o instalador mais recente em [Releases](https://github.com/GalbierY/share-local/releases/latest) e instale nos dois computadores. Os builds locais ficam em `release/`.
 2. Conectem os dois à mesma rede Wi-Fi ou cabo. No Firewall do Windows, permitam o Share Local em **redes privadas**. Não é necessário abrir portas no roteador.
-3. Um abre a sala. O outro seleciona a sala encontrada e digita o código exibido no primeiro computador. Se a busca não encontrar, digite o IP exibido junto do código.
-4. Clique em **Compartilhar tela**, escolha uma tela ou janela. O botão **Parar transmissão** encerra a captura imediatamente; fechar o aplicativo também encerra.
+3. Um abre a sala e pode usar **Copiar convite** para enviar o nome e o IP. O outro seleciona a sala encontrada (ou informa o IP) e clica em **Pedir para entrar**.
+4. Quem abriu vê o IP de quem pediu e escolhe **Autorizar entrada** ou **Recusar**. O pedido expira em um minuto e pode ser cancelado por quem pediu. Só um pedido fica pendente por vez; ninguém pode transmitir antes de ser autorizado.
+5. Clique em **Compartilhar tela**, escolha entre **Telas** e **Janelas** e clique em uma prévia para iniciar. O botão **Parar transmissão** encerra a captura imediatamente; fechar o aplicativo também encerra.
+
+A partir da 0.3.0, a entrada depende da autorização de quem abriu a sala. As releases até a 0.2.1 usam código de seis dígitos; atualize os dois computadores para a 0.3.0 antes de conectar.
 
 O áudio capturado é o de saída do computador inteiro, mesmo quando apenas uma janela é escolhida. Não há captura de microfone. Enquanto você transmite, o áudio da transmissão recebida fica pausado para evitar que ele seja recapturado e gere retorno. Para assistir com som, parem a transmissão de quem está assistindo. Algumas janelas protegidas, serviços de streaming e dispositivos de áudio podem impedir captura. Wi-Fi de convidados, isolamento entre dispositivos e VPN podem impedir conexão.
 
@@ -39,7 +42,7 @@ A partir da versão 0.2.0, o aplicativo instalado verifica as releases públicas
 
 **Migração da versão 0.1.0:** é necessário instalar manualmente a 0.2.0 uma única vez em cada PC, pois a primeira versão não continha atualizador. Depois disso, não é preciso reenviar instaladores pelo Discord.
 
-Para lançar a próxima atualização, faça commit das mudanças e execute na branch `main`:
+Para lançar a próxima atualização, revise `RELEASE_NOTES.md`, faça commit das mudanças e execute na branch `main`:
 
 ```powershell
 npm test
@@ -48,7 +51,7 @@ npm version patch
 git push --follow-tags origin main
 ```
 
-`npm version patch` incrementa a versão, atualiza o lockfile e cria commit e tag (por exemplo, `v0.2.1`). Para mudanças maiores, use `npm version minor`. O workflow `.github/workflows/release.yml` roda no Windows, confere a versão da tag e o destino, executa os testes e publica o instalador, o `.blockmap` e `latest.yml`. Não apague esses arquivos da release: o atualizador depende deles. A release precisa terminar de publicar para os aplicativos encontrarem a nova versão.
+`npm version patch` incrementa a versão, atualiza o lockfile e cria commit e tag (por exemplo, `v0.3.1`). Para mudanças maiores, use `npm version minor`. O workflow `.github/workflows/release.yml` roda no Windows, confere a versão da tag e o destino, executa os testes e publica o instalador, o `.blockmap` e `latest.yml` com as notas de `RELEASE_NOTES.md`. Não apague esses arquivos da release: o atualizador depende deles. A release precisa terminar de publicar para os aplicativos encontrarem a nova versão.
 
 O token temporário usado na publicação vem do próprio GitHub Actions; nenhuma credencial é distribuída no instalador. O código e os binários são públicos. O tráfego de atualização usa HTTPS. O app mantém seu identificador interno original para preservar a identidade da instalação após a mudança de nome. O executável ainda não tem assinatura Authenticode; a confiança das atualizações depende do controle desta conta GitHub e do HTTPS. Proteja a conta com autenticação de dois fatores.
 
@@ -56,20 +59,22 @@ Para mudar o repositório de publicação **antes de distribuir**, rode `npm run
 
 ## Rede e limites
 
-TCP 45878 para entrada e sinalização; UDP 45879 para descoberta; WebRTC negocia portas UDP dinâmicas para mídia. Só duas pessoas por sala. Não funciona pela internet nesta versão. As salas anunciadas na rede expõem nome e IP, nunca o código.
+TCP 45878 para entrada e sinalização; UDP 45879 para descoberta; WebRTC negocia portas UDP dinâmicas para mídia. Só duas pessoas por sala. Não funciona pela internet nesta versão. As salas anunciadas na rede expõem nome e IP. A entrada depende de autorização explícita de quem abriu a sala; pedidos recusados, cancelados ou expirados não dão acesso à transmissão.
 
-A mídia WebRTC é criptografada. A sinalização e o código trafegam em WebSocket sem TLS: use somente na rede doméstica de confiança. Não publique a porta no roteador. Para uso fora de casa, será necessário adicionar sinalização autenticada com TLS e um servidor TURN.
+A mídia WebRTC é criptografada. Os pedidos de entrada e a sinalização trafegam em WebSocket sem TLS: use somente na rede doméstica de confiança e confira o IP com quem pediu para entrar. Não publique a porta no roteador. Para uso fora de casa, será necessário adicionar sinalização autenticada com TLS e um servidor TURN.
 
 ## Validação manual antes de distribuir
 
-- Instalar nos dois PCs; criar uma sala, encontrar e entrar com código.
-- Tentar código incorreto e terceiro participante; ambos devem ser recusados.
+- Instalar a mesma versão nos dois PCs; criar uma sala, copiar o convite, encontrar e pedir para entrar.
+- Autorizar e recusar pedidos; confirmar que ninguém entra antes da autorização.
+- Cancelar um pedido e deixar outro expirar após um minuto; confirmar que o aviso desaparece e um novo pedido pode ser feito.
+- Tentar um pedido enquanto outro está pendente e um terceiro participante com a sala completa; ambos devem ser recusados.
 - Transmitir tela com um vídeo e confirmar imagem e som no outro PC.
 - Testar transmissão nos dois sentidos, inclusive simultânea; silenciar e tela cheia.
 - Parar pela interface e pelo controle de captura do Windows; confirmar que a captura encerrou.
 - Fechar o anfitrião; confirmar que o outro retorna à entrada. Reconectar.
 - Testar o caminho por IP com a descoberta automática bloqueada.
 
-Os testes unitários validam o protocolo e o comportamento do atualizador (falhas de rede, download automático e espera pela sala ficar livre). `test:app` abre o Electron sem janela visível, testa entrada/recusa de participantes, captura local e recepção WebRTC com vídeo e áudio sintéticos. Também salva uma prévia da interface em `release/preview.png`. A fidelidade do áudio, firewall e qualidade de transmissão exigem o teste real entre os dois computadores. A atualização com instalação e reinício deve ser confirmada com duas releases em um PC de teste; os testes automatizados não reinstalam o aplicativo na máquina do desenvolvedor.
+Os testes unitários validam o protocolo e o comportamento do atualizador (falhas de rede, download automático e espera pela sala ficar livre). `test:app` abre o Electron sem janela visível e testa teclado, layout a 900 e 760 px, cópia do convite, autorização, recusa, cancelamento, expiração real após um minuto, bloqueio de sinalização antes da autorização, pedidos antigos e limite de participantes. Também testa a captura pela interface, parada das faixas e recepção WebRTC com vídeo e áudio sintéticos. Salva prévias em `release/preview.png`, `preview-compact.png`, `preview-room.png`, `preview-request.png` e `preview-picker.png`. Os testes de quem pede entrada exigem um IP privado local; se não houver, o script informa que essa parte não foi executada. A fidelidade do áudio, firewall e qualidade de transmissão exigem o teste real entre os dois computadores. A atualização com instalação e reinício deve ser confirmada com duas releases em um PC de teste; os testes automatizados não reinstalam o aplicativo na máquina do desenvolvedor.
 
 `npm audit --omit=dev` não encontrou vulnerabilidades nas dependências distribuídas. A ferramenta de empacotamento possui um alerta moderado transitivo em `sprintf-js` (negação de serviço com precisão de formatação sem limite), ainda presente após `npm audit fix`; essa dependência não entra no aplicativo distribuído.

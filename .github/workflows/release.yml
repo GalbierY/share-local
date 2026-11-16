@@ -33,7 +33,7 @@ jobs:
           $artifacts = @((Get-ChildItem release -Filter *.exe).FullName)
           $artifacts += @((Get-ChildItem release -Filter *.blockmap).FullName)
           $artifacts += (Resolve-Path release/latest.yml).Path
-          gh release create $env:GITHUB_REF_NAME @artifacts --title "Share Local $env:GITHUB_REF_NAME" --generate-notes --verify-tag
+          gh release create $env:GITHUB_REF_NAME @artifacts --title "Share Local $env:GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md --verify-tag
           if ($LASTEXITCODE -ne 0) { throw 'A publicação da release falhou.' }
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
