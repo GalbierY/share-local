@@ -1,18 +1,34 @@
 # Share Local
 
-Aplicativo Windows para duas pessoas compartilharem tela e áudio na rede de casa. Sem cadastro ou senha: uma pessoa abre a sala, a outra pede para entrar e quem abriu autoriza. Ambos podem transmitir. A transmissão usa WebRTC, diretamente entre os computadores. Zahir (rajado), Emma (tricolor sem rabinho) e Priya (preta) são os mascotes do tema.
+Aplicativo Windows para duas pessoas compartilharem tela, áudio, conversa e arquivos na rede de casa. Sem cadastro ou senha: uma pessoa abre a sala, a outra pede para entrar e quem abriu autoriza. Ambos podem transmitir. Tela e áudio usam WebRTC, diretamente entre os computadores. Zahir (rajado), Emma (tricolor sem rabinho) e Priya (preta) são os mascotes do tema.
+
+**Novidades da 0.4.0:** perfil com nome e avatar, convites clicáveis, áudio opcional, troca de tela, janela flutuante, conversa e transferência de arquivos. Todas as melhorias escolhidas para as antigas etapas 0.5.0 e 0.6.0 foram reunidas nesta versão; veja [ROADMAP.md](ROADMAP.md).
 
 ## Usar
 
 1. Baixe o instalador mais recente em [Releases](https://github.com/GalbierY/share-local/releases/latest) e instale nos dois computadores. Os builds locais ficam em `release/`.
 2. Conectem os dois à mesma rede Wi-Fi ou cabo. No Firewall do Windows, permitam o Share Local em **redes privadas**. Não é necessário abrir portas no roteador.
-3. Um abre a sala e pode usar **Copiar convite** para enviar o nome e o IP. O outro seleciona a sala encontrada (ou informa o IP) e clica em **Pedir para entrar**.
-4. Quem abriu vê o IP de quem pediu e escolhe **Autorizar entrada** ou **Recusar**. O pedido expira em um minuto e pode ser cancelado por quem pediu. Só um pedido fica pendente por vez; ninguém pode transmitir antes de ser autorizado.
-5. Clique em **Compartilhar tela**, escolha entre **Telas** e **Janelas** e clique em uma prévia para iniciar. O botão **Parar transmissão** encerra a captura imediatamente; fechar o aplicativo também encerra.
+3. Na primeira abertura da 0.4.0, escolha seu nome e um avatar: Zahir, Emma ou Priya. O perfil fica salvo neste computador e pode ser editado pela barra lateral, inclusive durante a sala.
+4. Um abre a sala e usa **Copiar convite** para enviar um link. Com a 0.4.0 instalada, o link abre o Share Local com a sala preenchida. Também é possível colar o convite no aplicativo, selecionar uma sala encontrada ou informar o IP. Clique em **Pedir para entrar**; o link nunca envia o pedido automaticamente.
+5. Quem abriu vê o nome, avatar e IP de quem pediu e escolhe **Autorizar entrada** ou **Recusar**. O pedido expira em um minuto e pode ser cancelado por quem pediu. Só um pedido fica pendente por vez; ninguém pode transmitir antes de ser autorizado.
+6. Clique em **Compartilhar tela**, escolha entre **Telas** e **Janelas**, marque ou desmarque **Compartilhar áudio do computador** e clique em uma prévia para iniciar. A sala identifica quem está transmitindo. Use **Trocar tela** para mudar de monitor ou janela mantendo a conexão; se a nova captura falhar, a anterior continua. O botão **Parar transmissão** encerra a captura imediatamente; fechar o aplicativo também encerra.
+7. Ao receber uma transmissão, use **Janela flutuante** para acompanhar o vídeo sobre os outros aplicativos. Ela mantém volume e silêncio, e **Voltar à sala** restaura o tamanho anterior. Fechar a janela encerra o aplicativo e as capturas.
+8. Abra **Conversa** para trocar mensagens e links. Enter envia e Shift+Enter quebra a linha. Os links HTTP/HTTPS só abrem no navegador quando clicados; mensagens são texto, sem HTML. O histórico fica apenas nesta conexão, com até 100 mensagens visíveis.
+9. Abra **Arquivos**, escolha um arquivo e aguarde o aceite. A outra pessoa usa **Aceitar e salvar** para escolher o destino, ou **Recusar**. O envio mostra progresso e pode ser cancelado. Há um envio e um recebimento por vez; nenhum arquivo é aberto ou executado automaticamente.
+
+Arquivos existentes são preservados: escolha outro nome se já houver um arquivo no destino. O recebimento usa um arquivo parcial e confere tamanho e SHA-256 antes de concluir. Se o arquivo original mudar durante o envio, a transferência é interrompida. Cancelar, sair da sala ou fechar normalmente remove os parciais; um encerramento forçado pode deixar um arquivo `.share-local-*.part` na pasta escolhida.
+
+Pedidos de entrada mostram uma contagem regressiva até expirar. Se este computador tiver mais de um IP privado, escolha no convite o IP da mesma rede da outra pessoa. Recarregar a interface encerra a sala e as capturas, preservando o perfil salvo.
+
+Se a entrada falhar, o aplicativo mostra uma orientação e o botão **Tentar novamente**. Uma conexão sem resposta do anfitrião é encerrada em aproximadamente 25 segundos. A nova tentativa sempre envia um novo pedido e depende de autorização. Abrir um convite durante uma sala não encerra a conexão atual.
+
+Os links `share-local://join?...` funcionam na mesma rede e exigem o aplicativo instalado. Alguns mensageiros não tornam protocolos próprios clicáveis; nesse caso, copie o link para o campo **Convite ou IP**. O instalador registra o protocolo no Windows; `npm start` permite testar colando o link no aplicativo, sem alterar as associações do Windows.
+
+O perfil é guardado em `profile.json` na pasta de dados do aplicativo e compartilhado com a outra pessoa durante a conexão. Não é enviado a um serviço de cadastro. A 0.4.0 continua conectando à 0.3.0 para tela e áudio; a pessoa sem perfil aparece como **Outra pessoa**. Conversa e arquivos ficam desativados quando a outra versão não os suporta. Atualize os dois computadores para a 0.4.0 para usar todas as funções.
 
 A partir da 0.3.0, a entrada depende da autorização de quem abriu a sala. As releases até a 0.2.1 usam código de seis dígitos; atualize os dois computadores para a 0.3.0 antes de conectar.
 
-O áudio capturado é o de saída do computador inteiro, mesmo quando apenas uma janela é escolhida. Não há captura de microfone. Enquanto você transmite, o áudio da transmissão recebida fica pausado para evitar que ele seja recapturado e gere retorno. Para assistir com som, parem a transmissão de quem está assistindo. Algumas janelas protegidas, serviços de streaming e dispositivos de áudio podem impedir captura. Wi-Fi de convidados, isolamento entre dispositivos e VPN podem impedir conexão.
+Quando incluído, o áudio capturado é o de saída do computador inteiro, mesmo quando apenas uma janela é escolhida. Não há captura de microfone. O volume recebido pode ser ajustado sem alterar o volume do Windows. Enquanto você envia áudio, o som recebido fica pausado para evitar retorno; ao compartilhar só a imagem, você pode continuar ouvindo a outra pessoa. A opção de áudio também pode ser alterada ao usar **Trocar tela**. Algumas janelas protegidas, serviços de streaming e dispositivos de áudio podem impedir captura. Wi-Fi de convidados, isolamento entre dispositivos e VPN podem impedir conexão.
 
 O instalador tem aproximadamente 97 MB porque inclui o Electron. Se esse tamanho ultrapassar o limite de anexos da sua conta do Discord, envie um link de download privado pelo Discord. Se houver apenas bloqueio da extensão `.exe`, um ZIP pode ser aceito, mas não reduz significativamente o tamanho. O instalador ainda não possui assinatura digital: o Windows pode exibir um aviso de editor desconhecido.
 
@@ -31,10 +47,16 @@ npm run dist
 - `src/main.cjs`: janela Electron, captura, descoberta UDP e conexão da sala.
 - `src/preload.cjs`: interface restrita entre a tela e o processo principal.
 - `src/renderer.js`: interface e transmissão WebRTC.
+- `src/room-tools.js`: conversa, transferências e modo flutuante na interface.
 - `src/protocol.cjs`: validação das mensagens e dos endereços.
+- `src/room-protocol.cjs`: validação de conversa, arquivos e links externos.
+- `src/files.cjs`: envio em blocos, controle de fluxo, integridade e gravação de arquivos.
+- `src/profile.cjs`: leitura e gravação do perfil local.
+- `src/invitations.cjs`: criação e validação dos convites.
+- `scripts/installer.nsh`: registro do protocolo de convites no Windows e limpeza na desinstalação.
 - `src/style.css`: aparência, sem biblioteca de interface.
 
-Para adicionar compartilhamento de arquivos ou outras funções, acrescente ações explícitas na ponte e valide as mensagens no processo principal. A base mantém interface e acesso ao sistema separados, sem um sistema de plugins antecipado.
+As ações de arquivo e sistema são explícitas na ponte e validadas no processo principal. A interface não recebe acesso livre ao disco. A base mantém interface e acesso ao sistema separados, sem um sistema de plugins antecipado.
 
 ## Atualizações automáticas
 
@@ -51,7 +73,7 @@ npm version patch
 git push --follow-tags origin main
 ```
 
-`npm version patch` incrementa a versão, atualiza o lockfile e cria commit e tag (por exemplo, `v0.3.1`). Para mudanças maiores, use `npm version minor`. O workflow `.github/workflows/release.yml` roda no Windows, confere a versão da tag e o destino, executa os testes e publica o instalador, o `.blockmap` e `latest.yml` com as notas de `RELEASE_NOTES.md`. Não apague esses arquivos da release: o atualizador depende deles. A release precisa terminar de publicar para os aplicativos encontrarem a nova versão.
+`npm version patch` incrementa a versão, atualiza o lockfile e cria commit e tag (por exemplo, `v0.4.1`). Para mudanças maiores, use `npm version minor`. O workflow `.github/workflows/release.yml` roda no Windows, confere a versão da tag e o destino, executa os testes e publica o instalador, o `.blockmap` e `latest.yml` com as notas de `RELEASE_NOTES.md`. Não apague esses arquivos da release: o atualizador depende deles. A release precisa terminar de publicar para os aplicativos encontrarem a nova versão.
 
 O token temporário usado na publicação vem do próprio GitHub Actions; nenhuma credencial é distribuída no instalador. O código e os binários são públicos. O tráfego de atualização usa HTTPS. O app mantém seu identificador interno original para preservar a identidade da instalação após a mudança de nome. O executável ainda não tem assinatura Authenticode; a confiança das atualizações depende do controle desta conta GitHub e do HTTPS. Proteja a conta com autenticação de dois fatores.
 
@@ -59,22 +81,33 @@ Para mudar o repositório de publicação **antes de distribuir**, rode `npm run
 
 ## Rede e limites
 
-TCP 45878 para entrada e sinalização; UDP 45879 para descoberta; WebRTC negocia portas UDP dinâmicas para mídia. Só duas pessoas por sala. Não funciona pela internet nesta versão. As salas anunciadas na rede expõem nome e IP. A entrada depende de autorização explícita de quem abriu a sala; pedidos recusados, cancelados ou expirados não dão acesso à transmissão.
+TCP 45878 para entrada, sinalização, conversa e arquivos; UDP 45879 para descoberta; WebRTC negocia portas UDP dinâmicas para mídia. Só duas pessoas por sala. Conversa e arquivos funcionam mesmo sem compartilhar uma tela. Não funciona pela internet nesta versão. As salas anunciadas na rede expõem nome e IP. A entrada depende de autorização explícita de quem abriu a sala; pedidos recusados, cancelados ou expirados não dão acesso à transmissão.
 
-A mídia WebRTC é criptografada. Os pedidos de entrada e a sinalização trafegam em WebSocket sem TLS: use somente na rede doméstica de confiança e confira o IP com quem pediu para entrar. Não publique a porta no roteador. Para uso fora de casa, será necessário adicionar sinalização autenticada com TLS e um servidor TURN.
+A mídia WebRTC é criptografada. Pedidos de entrada, sinalização, conversa e arquivos trafegam no canal WebSocket local sem TLS: use somente na rede doméstica de confiança e confira o IP com quem pediu para entrar. O SHA-256 dos arquivos verifica integridade; não adiciona criptografia ao transporte. Não publique a porta no roteador. Para uso fora de casa, será necessário adicionar transporte autenticado com TLS e um servidor TURN para a mídia.
 
 ## Validação manual antes de distribuir
 
 - Instalar a mesma versão nos dois PCs; criar uma sala, copiar o convite, encontrar e pedir para entrar.
+- Escolher e editar o perfil; reiniciar o aplicativo e conferir que nome e avatar foram preservados.
+- Clicar em um convite com o aplicativo fechado, aberto e minimizado; confirmar a sala preenchida e que não houve entrada automática.
+- Confirmar nome e avatar nos pedidos, nas pessoas da sala e durante a transmissão; editar o perfil e conferir a mudança no outro PC.
 - Autorizar e recusar pedidos; confirmar que ninguém entra antes da autorização.
 - Cancelar um pedido e deixar outro expirar após um minuto; confirmar que o aviso desaparece e um novo pedido pode ser feito.
 - Tentar um pedido enquanto outro está pendente e um terceiro participante com a sala completa; ambos devem ser recusados.
 - Transmitir tela com um vídeo e confirmar imagem e som no outro PC.
+- Transmitir só imagem, ajustar o volume recebido e trocar de monitor ou janela sem sair da sala; incluir e remover o áudio durante as trocas.
+- Fechar uma janela antes de selecioná-la e confirmar que a captura anterior continua; cancelar uma troca e confirmar que nenhum recurso fica capturando em segundo plano.
 - Testar transmissão nos dois sentidos, inclusive simultânea; silenciar e tela cheia.
+- Usar o modo flutuante, mover e redimensionar a janela, ajustar volume e retornar ao tamanho anterior.
+- Conversar sem compartilhar tela; clicar em um link; confirmar que a conversa é apagada ao sair ou desconectar.
+- Enviar arquivos nos dois sentidos; aceitar, recusar e cancelar; escolher pasta e nome; confirmar que um arquivo já existente fica intacto.
+- Desconectar durante o envio e durante a escolha de destino; confirmar que uma conexão nova não recebe o arquivo antigo.
 - Parar pela interface e pelo controle de captura do Windows; confirmar que a captura encerrou.
 - Fechar o anfitrião; confirmar que o outro retorna à entrada. Reconectar.
 - Testar o caminho por IP com a descoberta automática bloqueada.
 
-Os testes unitários validam o protocolo e o comportamento do atualizador (falhas de rede, download automático e espera pela sala ficar livre). `test:app` abre o Electron sem janela visível e testa teclado, layout a 900 e 760 px, cópia do convite, autorização, recusa, cancelamento, expiração real após um minuto, bloqueio de sinalização antes da autorização, pedidos antigos e limite de participantes. Também testa a captura pela interface, parada das faixas e recepção WebRTC com vídeo e áudio sintéticos. Salva prévias em `release/preview.png`, `preview-compact.png`, `preview-room.png`, `preview-request.png` e `preview-picker.png`. Os testes de quem pede entrada exigem um IP privado local; se não houver, o script informa que essa parte não foi executada. A fidelidade do áudio, firewall e qualidade de transmissão exigem o teste real entre os dois computadores. A atualização com instalação e reinício deve ser confirmada com duas releases em um PC de teste; os testes automatizados não reinstalam o aplicativo na máquina do desenvolvedor.
+Os testes unitários validam perfis, persistência, convites, protocolo e atualizador. `test:app` usa uma pasta temporária de perfil e abre o Electron sem janela visível. Testa perfis, convites, contagem regressiva, autorização, conexão, layout e compatibilidade. Os testes de mídia exercitam captura sem áudio, inclusão e remoção de áudio em uma conexão WebRTC real, troca de fonte, recuperação após falha parcial, volume, liberação das faixas e bloqueio de uma captura pendente quando a outra pessoa desconecta e entra novamente. Também verifica que recarregar cancela a sala e os pedidos pendentes. Salva as prévias `release/preview*.png`, incluindo `preview-profile.png` e `preview-sharing.png`. Os testes de entrada e perda de resposta exigem IP privado local; o script informa quando essa parte não é executada. O clique via associação do Windows, a fidelidade do áudio, firewall e qualidade entre dois computadores exigem validação manual. A atualização com instalação e reinício deve ser confirmada com duas releases em um PC de teste; os testes não reinstalam o aplicativo na máquina do desenvolvedor.
+
+Os testes de arquivos cobrem envio real por WebSocket, arquivos vazios, recusa, cancelamento, checksum incorreto, alteração da origem, colisão de destino e descarte de ações de uma conexão antiga. `test:app` também verifica mensagens sem executar HTML, links bloqueados, pedido e recusa de arquivo e janela flutuante preservando o vídeo. As prévias adicionais são `preview-chat.png`, `preview-files.png` e `preview-floating.png`. Os seletores nativos de arquivo e destino exigem validação manual.
 
 `npm audit --omit=dev` não encontrou vulnerabilidades nas dependências distribuídas. A ferramenta de empacotamento possui um alerta moderado transitivo em `sprintf-js` (negação de serviço com precisão de formatação sem limite), ainda presente após `npm audit fix`; essa dependência não entra no aplicativo distribuído.

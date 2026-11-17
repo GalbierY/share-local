@@ -1,5 +1,11 @@
 const os = require('node:os');
 const TYPES = new Set(['offer', 'answer', 'candidate', 'stop']);
+const AVATARS = new Set(['zahir', 'emma', 'priya']);
+
+function validProfile(value) {
+  return Boolean(value && typeof value.name === 'string' && value.name.trim().length > 0 && value.name.length <= 32 &&
+    !/[\u0000-\u001f\u007f]/.test(value.name) && AVATARS.has(value.avatar));
+}
 
 function validSignal(value) {
   if (!value || !TYPES.has(value.type) || typeof value.id !== 'string' || !/^[a-f0-9-]{36}$/.test(value.id)) return false;
@@ -17,7 +23,7 @@ function localAddresses() {
 function validAddress(address) {
   if (typeof address !== 'string') return false;
   const parts = address.split('.');
-  return parts.length === 4 && parts.every(p => /^\d{1,3}$/.test(p) && Number(p) <= 255) &&
+  return parts.length === 4 && parts.every(p => /^(0|[1-9]\d{0,2})$/.test(p) && Number(p) <= 255) &&
     (parts[0] === '10' || (parts[0] === '192' && parts[1] === '168') || (parts[0] === '172' && +parts[1] >= 16 && +parts[1] <= 31));
 }
-module.exports = { validSignal, localAddresses, validAddress };
+module.exports = { validSignal, localAddresses, validAddress, validProfile };
