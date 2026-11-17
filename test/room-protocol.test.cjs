@@ -12,6 +12,8 @@ test('chat aceita texto limitado e arquivos exigem nomes e metadados seguros', (
   for (const size of [-1, Infinity, 0.5, Number.MAX_SAFE_INTEGER + 1, '100']) assert.equal(validFileMessage({ type: 'file-offer', id, name: 'a.txt', size }), false);
   assert.equal(validFileMessage({ type: 'file-end', id, sha256: '../arquivo' }), false);
   assert.deepEqual(readFeatures(['files', 'chat', 'exec']), ['chat', 'files']);
+  assert.deepEqual(readFeatures(['profile-images', 'files', 'chat', 'exec']), ['chat', 'files', 'profile-images']);
+  assert.deepEqual(readFeatures(['secure-data', 'pause-sharing']), ['chat', 'files', 'secure-data', 'pause-sharing']);
   assert.deepEqual(readFeatures(undefined), []);
 });
 

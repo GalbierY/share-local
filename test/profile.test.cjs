@@ -21,3 +21,20 @@ test('salva somente nome e avatar e recupera o perfil após abrir de novo', t =>
   fs.writeFileSync(file, JSON.stringify({ name: 'Nome', avatar: '../arquivo' }));
   assert.equal(readProfile(file), null);
 });
+
+test('preserva a foto no perfil e permite voltar a um avatar sem manter a imagem', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'share-local-profile-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const file = path.join(directory, 'profile.json');
+  const image = `data:image/png;base64,${fs.readFileSync(path.join(__dirname, 'fixtures', 'avatar.png')).toString('base64')}`;
+  const profile = { name: 'Pessoa', avatar: 'custom', image };
+  assert.deepEqual(saveProfile(file, { ...profile, filename: 'C:/foto-pessoal.png' }), profile);
+  assert.deepEqual(readProfile(file), profile);
+  assert.throws(() => saveProfile(file, { ...profile, image: 'https://example.com/foto.png' }));
+  assert.deepEqual(readProfile(file), profile);
+  for (const avatar of ['mymelody', 'poporing']) {
+    saveProfile(file, { name: 'Pessoa', avatar });
+    assert.deepEqual(readProfile(file), { name: 'Pessoa', avatar });
+    assert.equal(fs.readFileSync(file, 'utf8').includes('data:image'), false);
+  }
+});

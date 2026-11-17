@@ -1,0 +1,53 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { readPreferences, savePreferences } = require('../src/preferences.cjs');
+const { createSecureBridge } = require('../src/secure-bridge.cjs');
+const { createFileQueue } = require('../src/file-queue.cjs');
+const tick = () => new Promise(resolve => setImmediate(resolve));
+
+test('preferências persistem sem aceitar campos desconhecidos ou valores fora dos limites', t => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'share-local-prefs-'));
+  t.after(() => fs.rmSync(directory, { recursive: true, force: true }));
+  const file = path.join(directory, 'preferences.json'), defaults = readPreferences(file);
+  const value = savePreferences(file, defaults, { volume: 35, shareAudio: false, quality: 'economy', notifications: false, overlayOpacity: 0.85, overlaySide: 'left', window: { x: -900, y: 20, width: 900, height: 650 } });
+  assert.deepEqual(readPreferences(file), value);
+  for (const patch of [{ volume: 101 }, { quality: '4k' }, { overlayOpacity: 0.1 }, { notifications: 1 }, { arbitraryPath: 'x' }, { window: { width: 10 } }]) assert.throws(() => savePreferences(file, value, patch));
+  assert.deepEqual(readPreferences(file), value);
+  fs.writeFileSync(file, '{quebrado'); assert.deepEqual(readPreferences(file), defaults);
+  fs.writeFileSync(file, JSON.stringify({ volume: -1, quality: 'sharp', notifications: true }));
+  assert.equal(readPreferences(file).volume, defaults.volume); assert.equal(readPreferences(file).quality, 'sharp');
+});
+test('canal protegido exige sessão atual e confirmação; uma reconexão rejeita envios antigos', async () => {
+  const emitted = [], bridge = createSecureBridge(value => emitted.push(value));
+  bridge.start('first');
+  await assert.rejects(bridge.send({ type: 'chat' }));
+  assert.equal(bridge.setReady('old', true), false);
+  bridge.setReady('first', true);
+  let confirmed = false;
+  const sent = bridge.send({ type: 'chat', text: 'segredo' }).then(() => { confirmed = true; });
+  bridge.acknowledge('old', emitted[0].id); await tick(); assert.equal(confirmed, false);
+  bridge.acknowledge('first', emitted[0].id); await sent; assert.equal(confirmed, true);
+  const binary = bridge.send(Buffer.from('arquivo'));
+  assert.ok(emitted[1].packet instanceof Uint8Array);
+  const rejected = assert.rejects(binary); bridge.start('second'); await rejected;
+  assert.equal(bridge.isReady(), false);
+  bridge.setReady('second', true);
+  await assert.rejects(bridge.send(Buffer.alloc(128 * 1024 + 1)));
+  bridge.reset(); assert.equal(bridge.matches('second'), false);
+});
+test('fila respeita a ordem, permite remover itens e não perde o envio ativo ao limpar pendentes', async () => {
+  const offered = [], events = [];
+  const queue = createFileQueue({ offer: async file => { offered.push(file); }, emit: items => events.push(items) });
+  const paths = ['a.txt', 'b.txt', 'c.txt'].map(name => path.resolve(os.tmpdir(), name));
+  queue.add(paths); await tick(); assert.deepEqual(offered, paths.slice(0, 1));
+  const waiting = events.at(-1); queue.remove(waiting[0].id);
+  queue.observe({ direction: 'incoming', status: 'done' }); await tick(); assert.equal(offered.length, 1);
+  queue.observe({ direction: 'outgoing', status: 'declined' }); await tick(); assert.deepEqual(offered, [paths[0], paths[2]]);
+  queue.add([paths[1]]); queue.clear(); queue.add([paths[0]]); await tick(); assert.equal(offered.length, 2);
+  queue.observe({ direction: 'outgoing', status: 'done' }); await tick(); assert.equal(offered.at(-1), paths[0]);
+  queue.observe({ direction: 'outgoing', status: 'done' }); queue.reset(); await tick(); assert.equal(events.at(-1).length, 0);
+  assert.throws(() => queue.add(['relative.txt'])); assert.throws(() => queue.add(Array(101).fill(paths[0])));
+});

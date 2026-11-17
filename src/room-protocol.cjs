@@ -1,6 +1,6 @@
-const TRANSFER_CHUNK = 64 * 1024;
-const ROOM_FEATURES = ['chat', 'files'];
-const readFeatures = value => Array.isArray(value) ? ROOM_FEATURES.filter(feature => value.includes(feature)) : [];
+const TRANSFER_CHUNK = 48 * 1024;
+const ROOM_FEATURES = ['profile-images', 'secure-data', 'pause-sharing'];
+const readFeatures = value => Array.isArray(value) ? ['chat', 'files', ...ROOM_FEATURES].filter(feature => value.includes(feature) || (['chat', 'files'].includes(feature) && value.includes('secure-data'))) : [];
 const validId = value => typeof value === 'string' && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value);
 
 function validFilename(value) {

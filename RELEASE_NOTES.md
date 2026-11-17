@@ -1,26 +1,22 @@
-# Share Local 0.4.0
+# Share Local 0.5.0
 
 ## Novidades
 
-- **Janela flutuante:** acompanhe o vídeo sobre outros aplicativos, com volume e silêncio. Voltar à sala restaura o tamanho anterior sem recriar a transmissão.
-- **Conversa na sala:** mensagens e links com identificação pelo perfil, sem precisar compartilhar tela. O histórico fica apenas na conexão atual.
-- **Arquivos entre vocês:** escolha um arquivo, aguarde o aceite e acompanhe o progresso. Quem recebe escolhe o destino e pode recusar ou cancelar. O aplicativo confere tamanho e SHA-256, preserva arquivos existentes e nunca abre ou executa o conteúdo recebido.
-- **Seu perfil:** escolha um nome e um avatar de Zahir, Emma ou Priya. O perfil fica salvo neste computador, sem cadastro, e pode ser editado na barra lateral.
-- Pedidos de entrada mostram nome, avatar e IP. A sala identifica quem está conectado e quem está compartilhando a tela. Edições do perfil aparecem para a outra pessoa durante a conexão.
-- **Convites clicáveis:** Copiar convite gera um link que abre o Share Local e preenche a sala. Também é possível colar o link no campo Convite ou IP. A entrada continua dependendo de um pedido explícito e da autorização de quem abriu a sala.
-- **Conexão mais clara:** orientações para falhas, sala ocupada, pedido recusado ou expirado, e botão Tentar novamente. Uma conexão sem resposta do anfitrião é encerrada em aproximadamente 25 segundos, permitindo um novo pedido.
-- Um convite recebido durante uma sala não interrompe a conexão atual. Links com destinos fora da rede local ou parâmetros inválidos são recusados.
-- **Áudio opcional e volume:** compartilhe só a imagem ou inclua o áudio do computador, e ajuste o volume recebido. Ao transmitir só imagem, o som da outra pessoa continua disponível.
-- **Trocar tela:** mude de monitor ou janela sem sair da sala nem interromper a conexão. Se a nova captura falhar, a anterior é preservada. As faixas antigas são encerradas após uma troca concluída.
-- Pedidos mostram quanto tempo falta para expirar. Computadores com mais de um IP privado permitem escolher o endereço do convite.
-- Recarregar a interface encerra a sala e as capturas. Uma captura iniciada na conexão anterior nunca é retomada automaticamente para quem entrar depois.
+- **Painel lateral para jogar:** minimizar durante uma conexão abre um painel compacto sobre os outros aplicativos, com imagem recebida, participantes, avisos de conversa e arquivos, volume e controles de transmissão. O painel pode ficar à esquerda ou à direita, com opacidade de 80% a 100%. Voltar à sala restaura o tamanho anterior; Ocultar painel permite usar a barra de tarefas.
+- **Preferências salvas:** volume recebido, áudio compartilhado, qualidade, notificações, comportamento ao minimizar, transparência, lado do painel e tamanho e posição da janela normal.
+- **Qualidade da transmissão:** Automático até 1080p, Econômico até 720p/20 quadros por segundo e Mais nítido até 1440p/30 quadros por segundo. A transmissão adapta a taxa de envio à conexão dentro do limite escolhido.
+- **Recuperação da conexão:** novas tentativas ICE para oscilações da transmissão e do canal protegido. Uma queda da sala encerra as capturas e oferece um novo pedido de entrada, preservando endereço e preferências, sem retomar a tela automaticamente.
+- **Notificações discretas:** pedidos de entrada, mensagens e arquivos quando você está em outro aplicativo. Sem som e com opção de desativar; mensagens e nomes de arquivos não aparecem no aviso do Windows.
+- **Fila de arquivos:** escolha vários ou arraste para a sala. O envio acontece um por vez, com aceite individual, progresso, verificação de integridade e cancelamento. É possível remover pendentes ou limpar a fila; uma desconexão cancela os envios.
+- **Pausar e retomar:** bloquear temporariamente imagem e áudio da sua transmissão sem sair da sala. A outra pessoa vê um aviso de pausa nas versões compatíveis. Parar também cancela uma captura ainda em preparação.
+- **Atalhos durante a sala:** Ctrl+Shift+M para áudio recebido, Ctrl+Shift+P para pausar ou retomar, Ctrl+Shift+S para parar e Ctrl+Shift+O para alternar o painel. Atalhos ocupados por outro aplicativo são indicados nas preferências.
+- **Conversa e arquivos criptografados:** canal WebRTC com DTLS, independente da transmissão de tela. As duas pontas exibem um código que pode ser comparado por um meio de confiança. O aplicativo não recorre a envio de mensagens ou arquivos sem criptografia.
+- **Perfis mais pessoais:** foto própria com prévia, recorte, zoom e ajuste de posição, além de My Melody e Poporing. Zahir, Emma e Priya têm ilustrações e descrições padronizadas. Cancelar preserva o perfil salvo.
 
-## Atualização
+## Atualização e limites
 
-Atualize os dois computadores para a 0.4.0 para usar todas as funções. A conexão com a 0.3.0 continua funcionando para tela e áudio; participantes sem perfil aparecem como Outra pessoa, e conversa e arquivos ficam desativados. Versões 0.2.x usam o protocolo antigo com código e precisam ser atualizadas.
+Atualize os dois computadores para a 0.5.0. A conexão com a 0.3.0 e a 0.4.0 continua funcionando para tela e áudio; conversa e arquivos ficam desativados nessas conexões. Fotos e personagens novos aparecem como Zahir nas versões antigas.
 
-Instale `Share-Local-Instalar-0.4.0.exe` para registrar os links `share-local://` no Windows. Alguns mensageiros não tornam esses links clicáveis; nesse caso, cole o convite no aplicativo. Os dois computadores precisam estar na mesma rede.
+O painel é uma janela do Windows sempre sobre os outros aplicativos; funciona melhor com jogos em janela ou sem bordas. Jogos em tela cheia exclusiva podem ocultá-lo. Ele não injeta componentes no jogo. Fechar o painel encerra o aplicativo e as capturas; use Voltar à sala ou Ocultar painel para continuar conectado.
 
-O aplicativo continua limitado a duas pessoas por sala. Quando incluído, o áudio é o do computador inteiro. O instalador ainda não tem assinatura digital.
-
-Use somente em uma rede doméstica de confiança. A mídia WebRTC é criptografada; conversa e arquivos usam o canal WebSocket local sem TLS. O SHA-256 confere integridade, sem criptografar os arquivos em trânsito.
+O aplicativo continua limitado a duas pessoas na mesma rede de confiança. Tela, áudio, conversa e conteúdo dos arquivos usam WebRTC criptografado. Perfis, pedidos de entrada, IPs e sinalização ainda usam o WebSocket local sem TLS; a autorização não prova por si só a identidade da pessoa. Compare o código do canal protegido por voz ou por outro meio de confiança. O instalador ainda não possui assinatura digital.

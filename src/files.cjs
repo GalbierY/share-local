@@ -52,7 +52,7 @@ function createFileTransfers({ chooseFile, chooseDestination, isConnected, send,
     if (notify && epoch === generation && isConnected()) await send({ type: 'file-cancel', id: state.id }).catch(() => {});
   }
   const fail = (state, message) => finish(state, 'error', { message }, true);
-  async function offer() {
+  async function offer(sourcePath) {
     if (!isConnected()) throw new Error('Entre em uma sala antes de enviar um arquivo.');
     if (outgoing) throw new Error('Conclua ou cancele o envio atual antes de escolher outro arquivo.');
     const epoch = generation;
@@ -60,7 +60,7 @@ function createFileTransfers({ chooseFile, chooseDestination, isConnected, send,
     outgoing = state;
     report(state, 'choosing');
     try {
-      const source = await chooseFile();
+      const source = sourcePath || await chooseFile();
       if (!current(state) || epoch !== generation) return;
       if (!source) return finish(state, 'cancelled');
       const handle = await fs.open(source, 'r');
@@ -144,11 +144,15 @@ function createFileTransfers({ chooseFile, chooseDestination, isConnected, send,
     state.bytes += chunk.length;
     state.hash.update(chunk);
     state.flow = flow;
-    if (!state.writer.write(chunk)) {
+    const written = new Promise((resolve, reject) => {
+      if (state.writer.write(chunk, error => error ? reject(error) : resolve()) || state.backpressured) return;
+      state.backpressured = true;
       flow.pause();
-      state.writer.once('drain', () => flow.resume());
-    }
+      state.writer.once('drain', () => { state.backpressured = false; flow.resume(); });
+    });
+    written.catch(() => {});
     report(state, 'receiving');
+    return written;
   }
   async function completeIncoming(state, sha256) {
     if (!current(state) || state.status !== 'receiving') return;

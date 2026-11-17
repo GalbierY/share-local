@@ -3,19 +3,21 @@ const chatIds = new Set(), fileModels = new Map(), fileCards = new Map();
 const terminalFiles = new Set(['done', 'declined', 'cancelled', 'error']);
 
 function renderFloating(value) {
+  if (value) { clearTimeout(noticeTimer); $('notice').hidden = true; }
   document.body.classList.toggle('floating', value);
-  $('floating').textContent = value ? 'Voltar à sala' : 'Janela flutuante';
+  $('floating').textContent = value ? 'Voltar à sala' : 'Painel lateral';
   $('floating').setAttribute('aria-pressed', String(value));
 }
 function updateRoomTools() {
   $('room-actions').hidden = !connected;
-  $('show-chat').disabled = !connected || !peerFeatures.includes('chat');
-  $('show-files').disabled = !connected || !peerFeatures.includes('files');
-  $('tools-compat').hidden = !connected || (peerFeatures.includes('chat') && peerFeatures.includes('files'));
+  $('floating').hidden = !connected;
+  $('show-chat').disabled = !connected || !secureReady || !peerFeatures.includes('chat');
+  $('show-files').disabled = !connected || !secureReady || !peerFeatures.includes('files');
+  $('tools-compat').hidden = !connected || secureReady;
+  $('tools-compat').textContent = peerFeatures.includes('secure-data') ? 'Preparando conexão protegida…' : 'Atualize os dois computadores para conversa e arquivos protegidos.';
   $('chat-input').disabled = chatSending || $('show-chat').disabled;
   $('send-chat').disabled = $('chat-input').disabled || !$('chat-input').value.trim();
-  const sending = [...fileModels.values()].some(file => file.direction === 'outgoing' && !terminalFiles.has(file.status));
-  $('send-file').disabled = $('show-files').disabled || sending;
+  $('send-file').disabled = $('show-files').disabled;
   $('chat-badge').hidden = unreadMessages === 0;
   $('chat-badge').textContent = String(unreadMessages);
   const pending = [...fileModels.values()].filter(file => file.direction === 'incoming' && file.status === 'offered').length;
@@ -27,7 +29,7 @@ function markChatRead() {
   updateRoomTools();
 }
 async function openRoomTools(tool, focus = true) {
-  if (!connected || !peerFeatures.includes(tool === 'chat' ? 'chat' : 'files')) return;
+  if (!connected || !secureReady || !peerFeatures.includes(tool === 'chat' ? 'chat' : 'files')) return;
   if (document.body.classList.contains('floating')) renderFloating(await action('floating', false));
   activeTool = tool;
   $('room-tools').hidden = false;
@@ -56,6 +58,7 @@ function resetRoomTools() {
   $('chat-input').value = '';
   $('file-status').textContent = '';
   unreadMessages = 0;
+  renderFileQueue([]);
   closeRoomTools();
   updateRoomTools();
 }

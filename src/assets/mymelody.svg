@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 190" role="img" aria-labelledby="title">
+<title id="title">My Melody, a coelhinha</title>
+<ellipse cx="90" cy="173" rx="55" ry="9" fill="#101119" opacity=".4"/>
+<path d="M62 125q-11 12-13 30-9 13 6 17h18q17 7 34 0h18q15-4 6-17-2-18-13-30" fill="#fff1e5" stroke="#ba939d" stroke-width="2" stroke-linejoin="round"/>
+<path d="M65 141q-10 7-9 16m58-16q10 7 9 16" fill="none" stroke="#d7b4ba" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M52 64C30 25 42 5 54 14c12 8 15 28 22 38h18c6-14 11-40 25-39 18 2 10 36 8 53 24 10 30 38 16 56-18 26-89 26-108 1-15-20-6-48 17-59Z" fill="#e7a3bc" stroke="#a56986" stroke-width="2" stroke-linejoin="round"/>
+<path d="M53 24q-5 12 8 32m60-32q-8 6-12 28" fill="none" stroke="#f9cfda" stroke-width="7" stroke-linecap="round"/>
+<ellipse cx="89" cy="100" rx="48" ry="33" fill="#fff4e8" stroke="#ca929f" stroke-width="1.5"/>
+<ellipse cx="70" cy="97" rx="4" ry="6" fill="#493743"/><ellipse cx="109" cy="97" rx="4" ry="6" fill="#493743"/>
+<ellipse cx="90" cy="109" rx="6" ry="4" fill="#e5be70"/>
+<ellipse cx="57" cy="110" rx="8" ry="4" fill="#edb6bc" opacity=".65"/><ellipse cx="122" cy="110" rx="8" ry="4" fill="#edb6bc" opacity=".65"/>
+<g fill="#fff4e8" stroke="#d0a6b1" stroke-width="1.5"><ellipse cx="48" cy="61" rx="8" ry="12"/><ellipse cx="48" cy="61" rx="8" ry="12" transform="rotate(60 48 61)"/><ellipse cx="48" cy="61" rx="8" ry="12" transform="rotate(120 48 61)"/></g>
+<circle cx="48" cy="61" r="5" fill="#e5be70"/>
+<path d="M76 163v8m28-8v8" stroke="#d7b4ba" stroke-width="2" stroke-linecap="round"/>
+</svg>

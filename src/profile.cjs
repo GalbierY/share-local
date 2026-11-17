@@ -1,11 +1,11 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { validProfile } = require('./protocol.cjs');
+const { validProfile, copyProfile } = require('./protocol.cjs');
 
 function readProfile(file) {
   try {
     const value = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return validProfile(value) ? { name: value.name.trim(), avatar: value.avatar } : null;
+    return validProfile(value) ? copyProfile(value) : null;
   } catch (error) {
     if (error.code === 'ENOENT' || error instanceof SyntaxError) return null;
     throw error;
@@ -13,8 +13,8 @@ function readProfile(file) {
 }
 
 function saveProfile(file, value) {
-  if (!validProfile(value)) throw new Error('Informe um nome de até 32 caracteres e escolha um dos três avatares.');
-  const profile = { name: value.name.trim(), avatar: value.avatar };
+  if (!validProfile(value)) throw new Error('Informe um nome de até 32 caracteres e escolha um avatar ou uma foto válida.');
+  const profile = copyProfile(value);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(`${file}.tmp`, JSON.stringify(profile) + '\n', { encoding: 'utf8', mode: 0o600 });
   fs.renameSync(`${file}.tmp`, file);

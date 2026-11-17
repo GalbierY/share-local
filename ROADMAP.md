@@ -12,3 +12,20 @@
 - **12. Convites clicáveis:** abrir o aplicativo com a sala preenchida, aceitar convite colado e escolher o IP quando houver mais de uma rede.
 
 Os itens antes separados para 0.5.0 e 0.6.0 foram incluídos na 0.4.0 por escolha do usuário. As oito melhorias selecionadas estão nesta versão. O foco continua em duas pessoas na mesma rede, sem cadastro.
+
+## 0.5.0 — conforto, estabilidade e painel lateral
+
+- Prévia do nome e avatar antes de salvar, com cancelamento que preserva o perfil atual.
+- Foto própria com recorte, zoom e posição; imagem estática reduzida e salva localmente.
+- My Melody e Poporing na seleção, junto dos três gatos com ilustrações e descrições padronizadas.
+- Atualização do perfil na sala e compatibilidade com versões antigas, que exibem um avatar padrão para fotos e personagens novos.
+- Preferências salvas: volume, áudio, qualidade, notificações, janela e painel lateral.
+- Qualidade Automático, Econômico e Mais nítido, ajustável durante a transmissão.
+- Recuperação ICE e nova entrada guiada depois de uma queda da sala, sem retomar capturas automaticamente.
+- Notificações silenciosas para pedidos, mensagens e arquivos, com opção de desativar.
+- Seleção de vários arquivos, arrastar para enviar, fila sequencial e aceite individual.
+- Pausa real de imagem e áudio e atalhos globais durante a conexão.
+- Conversa e arquivos pelo canal WebRTC com DTLS e código para conferência; versões antigas mantêm apenas mídia.
+- Painel lateral ao minimizar, sempre sobre os outros aplicativos, com transparência e lado configuráveis.
+
+Validação automatizada concluída: 30 testes, teste completo do aplicativo e do executável empacotado, fontes do pacote, manifesto e SHA-512 do instalador. Validação manual pendente: dois PCs físicos, atualização instalada desde a 0.4.0 e painel com jogos em janela e sem bordas. Tela cheia exclusiva depende do comportamento do jogo.

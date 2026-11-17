@@ -5,6 +5,7 @@ let pendingRequest, joinCancelled = false;
 let localProfile, otherProfile, lastJoinAddress;
 let connectionGeneration = 0, joinCountdown, requestCountdown;
 let captureIncludesAudio = false;
+let captureCancelled = false;
 let peerFeatures = [];
 let signalQueue = Promise.resolve();
 const earlyCandidates = new Map();
@@ -14,26 +15,18 @@ async function action(name, data) {
   if (!result.ok) throw Object.assign(new Error(result.error), { code: result.code });
   return result.value;
 }
+const avatarSource = profile => profile?.avatar === 'custom' ? profile.image : `assets/${profile?.avatar || 'zahir'}.svg`;
 function renderProfiles() {
   $('profile-display-name').textContent = localProfile?.name || 'Seu perfil';
-  $('profile-avatar').src = `assets/${localProfile?.avatar || 'zahir'}.svg`;
+  $('profile-avatar').src = avatarSource(localProfile);
   $('self-name').textContent = localProfile?.name || 'Você';
   $('self-avatar').src = $('profile-avatar').src;
   $('other-name').textContent = otherProfile?.name || 'Esperando companhia';
   $('other-avatar').hidden = !otherProfile;
-  $('other-avatar').src = `assets/${otherProfile?.avatar || 'zahir'}.svg`;
+  $('other-avatar').src = avatarSource(otherProfile);
   $('other-state').textContent = otherProfile ? 'CONECTADO' : '1 VAGA';
   $('remote-caption').textContent = `${otherProfile?.name || 'Outra pessoa'} está compartilhando`;
   $('remote').setAttribute('aria-label', `Tela compartilhada por ${otherProfile?.name || 'outra pessoa'}`);
-}
-function showProfile() {
-  if ($('profile-dialog').open) return $('profile-name').focus();
-  $('profile-name').value = localProfile?.name || '';
-  document.querySelector(`input[name="avatar"][value="${localProfile?.avatar || 'zahir'}"]`).checked = true;
-  $('cancel-profile').hidden = !localProfile;
-  $('profile-error').hidden = true;
-  $('profile-dialog').showModal();
-  $('profile-name').focus();
 }
 function clearJoinProblem() {
   $('join-error').hidden = $('join-help').hidden = $('retry-join').hidden = true;
@@ -144,6 +137,7 @@ function bindForm(id, pendingLabel, handler) {
   form.addEventListener('input', () => { $(`${id}-error`).hidden = true; if (id === 'join') clearJoinProblem(); });
 }
 function showRoom(name) {
+  $('reconnect-banner').hidden = true;
   clearTimeout(noticeTimer);
   $('notice').hidden = true;
   $('lobby').hidden = true;
@@ -175,7 +169,7 @@ function updateConnection(value) {
   if (connected !== value) connectionGeneration++;
   connected = value;
   if (!value) peerFeatures = [];
-  if (changed && !value) resetRoomTools();
+  if (changed && !value) { closeSecureRoom(); resetRoomTools(); }
   updateRoomTools();
   $('share').disabled = !value || capturePending;
   $('change-source').disabled = !value || capturePending;
@@ -186,7 +180,7 @@ function updateConnection(value) {
   renderStage();
 }
 function renderStage() {
-  $('stage-title').textContent = outgoing ? 'Sua tela está sendo compartilhada.' : capturePending ? 'Preparando sua transmissão…' : connected ? `${otherProfile?.name || 'Sua companhia'} chegou. Pode dar o play.` : 'O sofá está reservado.';
+  $('stage-title').textContent = outgoing?.paused ? 'Sua transmissão está pausada.' : outgoing ? 'Sua tela está sendo compartilhada.' : capturePending ? 'Preparando sua transmissão…' : connected ? `${otherProfile?.name || 'Sua companhia'} chegou. Pode dar o play.` : 'O sofá está reservado.';
   $('stage-subtitle').textContent = outgoing ? 'Sua prévia aparece abaixo. A tela da outra pessoa aparecerá aqui.' : connected ? 'Escolha uma tela ou janela no botão Compartilhar tela.' : 'Envie o convite para sua pessoa entrar na sala.';
 }
 function stopIncoming() {
@@ -196,12 +190,14 @@ function stopIncoming() {
   $('remote-caption').hidden = true;
   $('stage-empty').hidden = false;
   $('mute').hidden = $('fullscreen').hidden = $('floating').hidden = $('play').hidden = $('audio-controls').hidden = true;
-  if (document.body.classList.contains('floating')) action('floating', false).then(renderFloating).catch(error => notice(error.message));
+  $('paused-cover').hidden = true;
+  updateRoomTools();
 }
 function stopTracks(stream) {
   stream?.getTracks().forEach(track => { track.onended = null; track.stop(); });
 }
 function stopOutgoing(notify = true) {
+  if (capturePending) { captureCancelled = true; action('cancel-capture').catch(() => {}); }
   const previous = outgoing;
   outgoing = undefined;
   if (previous) {
@@ -212,6 +208,7 @@ function stopOutgoing(notify = true) {
   }
   $('preview').srcObject = null;
   $('preview-wrap').hidden = $('stop').hidden = $('change-source').hidden = true;
+  $('pause-share').hidden = true;
   $('floating-sharing').hidden = true;
   $('share').hidden = false;
   updateRemoteAudio();
@@ -237,15 +234,23 @@ function playRemote() {
 function clearMedia() { stopOutgoing(false); stopIncoming(); earlyCandidates.clear(); }
 function createPeer(id) {
   const pc = new RTCPeerConnection({ iceServers: [] });
+  let recoveryTimer, recoveries = 0;
   pc.onicecandidate = event => {
     if (event.candidate && connected) action('signal', { type: 'candidate', id, candidate: event.candidate.toJSON() }).catch(error => notice(error.message));
   };
   pc.onconnectionstatechange = () => {
-    if (pc.connectionState === 'failed') {
-      notice('A transmissão não conectou. Confiram o firewall e se o Wi-Fi permite comunicação entre os computadores.');
-      if (outgoing?.id === id) stopOutgoing();
-      if (incoming?.id === id) stopIncoming();
-    }
+    if (['connected', 'closed'].includes(pc.connectionState)) { clearTimeout(recoveryTimer); recoveryTimer = undefined; if (pc.connectionState === 'connected') { recoveries = 0; $('peer-state').textContent = '● Vocês estão conectados'; } return; }
+    if (!['disconnected', 'failed'].includes(pc.connectionState) || recoveryTimer) return;
+    $('peer-state').textContent = '○ Recuperando a transmissão…';
+    recoveryTimer = setTimeout(async () => {
+      recoveryTimer = undefined;
+      if (!connected || pc.connectionState === 'connected' || pc.signalingState === 'closed' || outgoing?.id !== id) return;
+      if (++recoveries > 2) { stopOutgoing(); return notice('A transmissão foi interrompida. Sua tela parou de ser compartilhada; tente novamente.'); }
+      try {
+        pc.restartIce(); await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }));
+        if (connected && outgoing?.id === id) await action('signal', { type: 'offer', id, description: pc.localDescription.toJSON() });
+      } catch { if (outgoing?.id === id) stopOutgoing(); }
+    }, 3000);
   };
   return pc;
 }
@@ -256,7 +261,15 @@ async function flushCandidates(state) {
 }
 async function receive(msg) {
   if (!connected) return;
+  if (msg.channel === 'room') return receiveSecureSignal(msg);
   if (msg.type === 'offer') {
+    if (incoming?.id === msg.id) {
+      const state = incoming;
+      await state.pc.setRemoteDescription(msg.description);
+      await flushCandidates(state);
+      await state.pc.setLocalDescription(await state.pc.createAnswer());
+      return action('signal', { type: 'answer', id: state.id, description: state.pc.localDescription.toJSON() });
+    }
     stopIncoming();
     const state = { id: msg.id, pc: createPeer(msg.id) };
     incoming = state;
@@ -282,6 +295,7 @@ async function receive(msg) {
   } else if (msg.type === 'answer' && outgoing?.id === msg.id) {
     await outgoing.pc.setRemoteDescription(msg.description);
     await flushCandidates(outgoing);
+    await applySendingQuality(outgoing);
   } else if (msg.type === 'candidate') {
     const state = outgoing?.id === msg.id ? outgoing : incoming?.id === msg.id ? incoming : null;
     if (state?.pc.remoteDescription) await state.pc.addIceCandidate(msg.candidate);
@@ -293,6 +307,10 @@ async function receive(msg) {
   } else if (msg.type === 'stop') {
     if (incoming?.id === msg.id) stopIncoming();
     earlyCandidates.delete(msg.id);
+  } else if (msg.type === 'pause' && incoming?.id === msg.id) {
+    $('paused-cover').hidden = !msg.paused;
+    $('remote').hidden = msg.paused;
+    $('paused-cover').textContent = msg.paused ? `${otherProfile?.name || 'Sua companhia'} pausou a transmissão` : '';
   }
 }
 bindForm('host', 'Abrindo sala…', async () => {
@@ -311,6 +329,7 @@ bindForm('join', 'Enviando pedido…', async () => {
   peerFeatures = room.features || [];
   hosting = false;
   updateConnection(true);
+  startSecureRoom(room.sessionId).catch(error => notice(error.message));
   showRoom(room.name);
 });
 bind('leave', async () => {
@@ -324,24 +343,6 @@ bind('copy-invite', async () => {
   notice('Convite copiado. O link abre o Share Local de quem você convidar.');
 });
 bind('retry-join', () => { $('join-form').requestSubmit(); });
-bind('edit-profile', showProfile);
-bind('cancel-profile', () => $('profile-dialog').close());
-$('profile-dialog').addEventListener('cancel', event => { if (!localProfile) event.preventDefault(); });
-$('profile-form').addEventListener('submit', async event => {
-  event.preventDefault();
-  if ($('save-profile').disabled) return;
-  $('save-profile').disabled = true;
-  $('profile-error').hidden = true;
-  try {
-    localProfile = await action('save-profile', { name: $('profile-name').value.trim(), avatar: document.querySelector('input[name="avatar"]:checked').value });
-    renderProfiles();
-    $('host').disabled = $('join').disabled = false;
-    $('profile-dialog').close();
-    if (!$('invitation-banner').hidden) $('join').focus();
-    notice('Seu perfil foi salvo neste computador.');
-  } catch (error) { $('profile-error').textContent = error.message; $('profile-error').hidden = false; }
-  finally { $('save-profile').disabled = false; }
-});
 bind('cancel-join', async () => { joinCancelled = true; await action('leave'); });
 bind('approve-join', () => action('respond-join', { id: pendingRequest?.id, approve: true }));
 bind('reject-join', () => action('respond-join', { id: pendingRequest?.id, approve: false }));
@@ -383,9 +384,10 @@ function renderSources() {
 }
 async function startSharing(source) {
   $('picker').close();
-  if (!connected || capturePending) return;
+  if (!connected || capturePending || outgoing?.paused) return;
   const generation = connectionGeneration, previous = outgoing, includeAudio = $('share-audio').checked;
   capturePending = true;
+  captureCancelled = false;
   captureIncludesAudio = includeAudio;
   $('share').disabled = $('change-source').disabled = true;
   $('change-source').textContent = 'Trocando tela…';
@@ -394,10 +396,13 @@ async function startSharing(source) {
   let stream, state = previous, interrupted = false;
   try {
     await action('select-source', { id: source.id, audio: includeAudio });
+    if (captureCancelled || generation !== connectionGeneration || !connected || outgoing !== previous) return;
     stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 30, max: 30 } }, audio: includeAudio });
-    if (generation !== connectionGeneration || !connected || outgoing !== previous) return;
+    if (captureCancelled || generation !== connectionGeneration || !connected || outgoing !== previous) return;
     const video = stream.getVideoTracks()[0], audio = stream.getAudioTracks()[0] || null;
     if (!video || video.readyState !== 'live') throw new Error('A tela escolhida foi fechada. Escolha outra fonte.');
+    await applyCaptureQuality(video);
+    if (captureCancelled || generation !== connectionGeneration || !connected || outgoing !== previous) return;
     if (previous) {
       const oldStream = previous.stream;
       try {
@@ -431,10 +436,12 @@ async function startSharing(source) {
     $('shared-source').textContent = source.name;
     $('capture-audio').textContent = audio ? 'Áudio do computador incluído. O som recebido fica pausado durante o envio para evitar retorno.' : 'Só imagem. Você pode continuar ouvindo a outra pessoa.';
     $('preview-wrap').hidden = $('stop').hidden = $('change-source').hidden = false;
+    $('pause-share').hidden = false; $('pause-share').textContent = 'Pausar'; $('pause-share').setAttribute('aria-pressed', 'false');
     $('floating-sharing').hidden = false;
     $('share').hidden = true;
     updateRemoteAudio();
     renderStage();
+    await applySendingQuality(state);
     if (!previous) {
       await state.pc.setLocalDescription(await state.pc.createOffer());
       if (generation !== connectionGeneration || outgoing !== state) return;
@@ -467,7 +474,12 @@ bind('dismiss-notice', () => { clearTimeout(noticeTimer); $('notice').hidden = t
 $('address').addEventListener('input', () => { $('invitation-banner').hidden = true; renderDiscovered(); });
 window.canto.onEvent(({ type, data }) => {
   if (type === 'update-state') renderUpdate(data);
-  if (type === 'connected') { clearTimeout(noticeTimer); $('notice').hidden = true; otherProfile = data.profile; peerFeatures = data.features || []; updateConnection(true); }
+  if (type === 'connected') { clearTimeout(noticeTimer); $('notice').hidden = true; otherProfile = data.profile; peerFeatures = data.features || []; updateConnection(true); startSecureRoom(data.sessionId).catch(error => notice(error.message)); }
+  if (type === 'secure-send') sendSecurePacket(data);
+  if (type === 'file-queue') renderFileQueue(data);
+  if (type === 'open-tool') openRoomTools(data).catch(error => notice(error.message));
+  if (type === 'shortcut') handleShortcut(data);
+  if (type === 'shortcut-status') $('shortcut-status').textContent = data.length ? `Atalhos ocupados por outro aplicativo: ${data.join(', ')}.` : 'Atalhos disponíveis durante a sala.';
   if (type === 'chat-message') appendChat(data);
   if (type === 'file-state') renderFileState(data);
   if (type === 'floating-state') renderFloating(data);
@@ -484,7 +496,7 @@ window.canto.onEvent(({ type, data }) => {
   if (type === 'join-request') {
     pendingRequest = data;
     $('request-title').textContent = `${data.profile.name} quer entrar`;
-    $('request-avatar').src = `assets/${data.profile.avatar}.svg`;
+    $('request-avatar').src = avatarSource(data.profile);
     $('request-address').textContent = data.address;
     clearInterval(requestCountdown);
     requestCountdown = startCountdown('request-countdown', data.expiresAt);
@@ -507,6 +519,8 @@ window.canto.onEvent(({ type, data }) => {
       showLobby();
       if (lastJoinAddress) $('address').value = lastJoinAddress;
       showJoinProblem({ code: 'UNAVAILABLE', message: `A conexão com ${roomName} foi encerrada. Você pode pedir para entrar novamente.` });
+      $('reconnect-banner').hidden = false;
+      $('reconnect-description').textContent = `${previousName} · ${roomName}. Sua transmissão foi encerrada por segurança. Peça para entrar novamente quando a conexão voltar.`;
     }
     notice(data.hosting ? `${previousName} saiu ou perdeu a conexão. A sala continua aberta.` : 'A conexão com a sala foi encerrada. Use Tentar novamente para enviar um novo pedido.');
   }
@@ -552,11 +566,3 @@ function renderUpdate(state) {
 }
 bind('check-updates', async () => renderUpdate(await action('check-updates')));
 action('update-state').then(renderUpdate).catch(error => notice(error.message));
-action('initial-state').then(state => {
-  localProfile = state.profile;
-  renderProfiles();
-  $('host').disabled = $('join').disabled = !localProfile;
-  if (state.invitation) applyInvitation(state.invitation);
-  if (state.inviteError) notice(state.inviteError);
-  if (!localProfile) showProfile();
-}).catch(error => { notice(`Não foi possível carregar seu perfil: ${error.message}`); showProfile(); });

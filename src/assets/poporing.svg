@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 190" role="img" aria-labelledby="title">
+<title id="title">Poporing, o verdinho</title>
+<ellipse cx="90" cy="173" rx="66" ry="9" fill="#101119" opacity=".4"/>
+<path d="M26 159c-8-17 2-46 21-70 15-19 29-24 38-45 4-10 11-8 13 1 4 15 15 22 29 37 25 28 40 57 28 77-14 22-111 23-129 0Z" fill="#a4cb78" stroke="#5f8158" stroke-width="2" stroke-linejoin="round"/>
+<path d="M31 153q36 22 117 0c-10 21-102 21-117 0Z" fill="#84b76c"/>
+<path d="M47 115q10-24 31-35" fill="none" stroke="#d8e9ae" stroke-width="10" stroke-linecap="round"/>
+<ellipse cx="123" cy="144" rx="10" ry="5" fill="#cbe29f" opacity=".7"/>
+<ellipse cx="66" cy="124" rx="4" ry="6" fill="#354633"/><ellipse cx="110" cy="124" rx="4" ry="6" fill="#354633"/>
+<path d="M80 134q9 10 18 0" fill="none" stroke="#47613d" stroke-width="2.5" stroke-linecap="round"/>
+<ellipse cx="51" cy="137" rx="9" ry="5" fill="#d7ac8c" opacity=".7"/><ellipse cx="126" cy="137" rx="9" ry="5" fill="#d7ac8c" opacity=".7"/>
+<circle cx="99" cy="82" r="3" fill="#cbe29f"/><circle cx="119" cy="100" r="2" fill="#d8e9ae"/>
+</svg>
